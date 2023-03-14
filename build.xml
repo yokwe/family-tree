@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ====================================================================== -->
+<!-- Ant build file (http://ant.apache.org/) for Ant 1.6.2 or above.        -->
+<!-- ====================================================================== -->
+
+<project name="yokwe-familytree" default="package" basedir=".">
+
+	<import file="maven-build.xml" />
+
+	<property name="logback.conf" value="data/logback.xml" />
+
+	<path id="target.jar">
+		<pathelement location="${maven.build.dir}/${maven.build.finalName}.jar" />
+	</path>
+
+	
+	<!-- Main -->
+	<target name="run-main">
+		<java module="yokwe.familytree/yokwe.familytree.Main" fork="true">
+			<modulepath refid="build.classpath" />
+			<modulepath refid="target.jar" />
+			<classpath  location="${libreoffice.lib.dir}" />
+			<sysproperty key="logback.configurationFile" value="${logback.conf}" />
+		</java>
+	</target>
+
+</project>
