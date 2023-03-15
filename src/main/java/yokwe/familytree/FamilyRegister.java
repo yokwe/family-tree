@@ -1,69 +1,72 @@
 package yokwe.familytree;
 
 import yokwe.util.libreoffice.Sheet;
-import yokwe.util.libreoffice.Sheet.ColumnName;
 
 public class FamilyRegister {
 	@Sheet.SheetName("戸籍一覧")
 	@Sheet.HeaderRow(0)
 	@Sheet.DataRow(1)
-	public static class Register {
+	public static class Register extends Sheet {
 		@ColumnName("戸籍ID")
-		String registerID;
+		public String registerID;
 		@ColumnName("形式")
-		String format;
+		public String format;
 		@ColumnName("番号右上")
-		String number;
+		public String number;
 		@ColumnName("姓")
-		String familyName;
+		public String familyName;
 		@ColumnName("前戸主")
-		String previousHeadOfFamily;
+		public String previousHeadOfFamily;
 		@ColumnName("戸主")
-		String headOfFamily;
+		public String headOfFamily;
 	}
 	
 	@Sheet.SheetName("人物一覧")
 	@Sheet.HeaderRow(0)
 	@Sheet.DataRow(1)
-	public static class Person {
+	public static class Person extends Sheet {
 		@ColumnName("人物ID")
-		String perrsonID;
+		public String perrsonID;
 		@ColumnName("姓")
-		String familyName;
+		public String familyName;
 		@ColumnName("名")
-		String givenName;
-		@ColumnName("性")
-		String gender;
+		public String givenName;
+		@ColumnName("性別")
+		public String gender;
 		@ColumnName("続柄")
-		String relationShip;
+		public String relationShip;
 		//
 		@ColumnName("誕生日")
-		String birthDate;
+		public String birthDate;
 		@ColumnName("結婚日")
-		String marriageDate;
+		public String marriageDate;
 		@ColumnName("死亡日")
-		String deathDate;
+		public String deathDate;
 		//
 		@ColumnName("誕生年西暦")
-		String birthDateAD;
+		public String birthDateAD;
 		@ColumnName("結婚年西暦")
-		String marriageDateAD;
+		public String marriageDateAD;
 		@ColumnName("死亡年西暦")
-		String deathDateAD;
+		public String deathDateAD;
+		//
+		@ColumnName("結婚年齢概算")
+		public String marriageAge;
+		@ColumnName("死亡年齢概算")
+		public String deathAge;
 	}
 	
-	@Sheet.SheetName("戸籍")
 	@Sheet.HeaderRow(0)
 	@Sheet.DataRow(1)
-	public static class Family {
+	public static class Family extends Sheet {
 		@ColumnName("戸籍")
-		String registerID;
+		public String registerID;
 		@ColumnName("人物")
-		String personID;
+		public String personID;
 		@ColumnName("項目")
-		String type;
+		public String type;
 		@ColumnName("内容")
-		String detail;
+		public String detail;
 	}
 	
 }
