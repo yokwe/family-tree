@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import yokwe.familytree.FamilyRegister.Family;
 import yokwe.familytree.FamilyRegister.Person;
 import yokwe.familytree.FamilyRegister.Register;
+import yokwe.util.CSVUtil;
 import yokwe.util.StringUtil;
 import yokwe.util.UnexpectedException;
 import yokwe.util.libreoffice.Sheet;
@@ -252,17 +253,27 @@ public class Main {
 		public String givenName;
 		//
 		public String birthDate;
-		public String father;
-		public String mother;
+		public String marriageDate;
+		public String spause;
+		public String deathDate;
+		//
+		public String birthYear;
+		public String marriageYear;
+		public String deathYear;
 		
 		PersonDetail(Person person) {
 			this.personID   = person.personID;
 			this.familyName = person.familyName;
 			this.givenName  = person.givenName;
 			//
-			this.birthDate = new String();
-			this.father    = new String();
-			this.mother    = new String();
+			this.birthDate    = person.birthDate;
+			this.marriageDate = new String();
+			this.spause       = new String();
+			this.deathDate    = new String();
+			//
+			this.birthYear    = new String();
+			this.marriageYear = new String();
+			this.deathYear    = new String();
 		}
 	}
 	
@@ -282,8 +293,46 @@ public class Main {
 		}
 	}
 	
+	private static int toYear(String string) {
+		Matcher m = pat_DATE.matcher(string);
+		if (m.matches()) {
+			String era = m.group(1);
+			String yearString = m.group(2);
+			int year = yearString.equals("元") ? 1 : Integer.valueOf(yearString);
+			switch(era) {
+			case "平成":
+				return year + 1988;
+			case "昭和":
+				return year + 1925;
+			case "大正":
+				return year + 1911;
+			case "明治":
+				return year + 1867;
+			case "天保":
+				return year + 1829;
+			case "安政":
+				return year + 1853;
+			case "万延":
+				return year + 1859;
+			case "文化":
+				return year + 1803;
+			case "嘉永":
+				return year + 1847;
+			case "文政":
+				return year + 1817;
+			default:
+				logger.error("Unpexpeced {}", string);
+				throw new UnexpectedException("Unpexpected");
+			}
+		} else {
+			logger.error("Unpexpeced  {}", string);
+			throw new UnexpectedException("Unpexpected");
+		}
+	}
+
 	private static void buildPersonMap(PersonMap personMap, RegisterMap registerMap, PersonEntryMap personEntryMap) {
-		Set<String> keySet = new TreeSet<>();
+		List<PersonDetail> details = new ArrayList<>();
+		
 		for(var personID: personEntryMap.getPersonIDSet()) {
 			Person person = personMap.get(personID);
 			List<PersonEntry> entryList = personEntryMap.get(personID);
@@ -299,9 +348,9 @@ public class Main {
 					String value      = e.value;
 					if (value == null) continue;
 					
-					keySet.add(key);
 					switch(key) {
 					case "出生":
+						toYear(value);
 						break;
 					case "前戸主トノ続柄":
 						continue;
@@ -338,13 +387,12 @@ public class Main {
 					if (map.containsKey(key)) {
 						String oldValue = map.get(key);
 						if (!oldValue.equals(value)) {
-							logger.warn("differenct value  {}  {}  {}  {}  {}", e.registerID, person.personID, key, oldValue, value);
+							logger.warn("differenct value  {}  {}  {}  {}  {}  {}", personID, e.registerID, person.personID, key, oldValue, value);
 						}
 					} else {
 						map.put(key, value);
 					}
 				}
-				logger.info("person  {}  {}", personID, map);
 				for(var e: detailList) {
 					if (e.contains("裁判")) continue;
 					if (e.contains("追完")) continue;
@@ -361,18 +409,90 @@ public class Main {
 					if (e.contains("養子離婚")) continue;
 					if (e.contains("？？？？？")) continue;
 					if (e.contains("昭和32年法務省令第27号")) continue;
+					if (e.contains("夫") && e.contains("死亡")) continue;
 					
 					String date = findDate(e);
 					if (date == null) {
 						logger.info("## {}", e);
 						continue;
 					}
-					if (e.contains("婚姻届出")) {
+					int year = toYear(date);
+					
+					String key;
+					String value = date;
+					if (e.contains("婚姻届出") || e.contains("と婚姻") || e.contains("入籍ス")) {
 						// 婚姻
-					} else if (e.contains("と婚姻")) {
-						// 婚姻
-					} else if (e.contains("入籍ス")) {
-						// 婚姻
+						key = "婚姻";
+						if (map.containsKey(key)) {
+							String oldValue = map.get(key);
+							if (!value.equals(oldValue)) {
+								logger.warn("### DIFFERENT {}  {}  {}  {}", personID, key, oldValue, value);
+							}
+						} else {
+//							logger.info("## {}  {}  {}", personID, key, value);
+//							logger.info("   {}", e);
+							map.put(key, date);
+						}
+						{
+							Pattern p = Pattern.compile("[0-9]日(.+?)ト婚姻届出");
+							Matcher m = p.matcher(e);
+							if (m.find() && m.group(1).length() < 8) {
+								String name = m.group(1);
+//								logger.info("$  {}", name);
+								map.put("配偶者", name);
+								continue;
+							}
+						}
+						{
+							Pattern p = Pattern.compile("番地(.+?)ト婚姻届出");
+							Matcher m = p.matcher(e);
+							if (m.find() && m.group(1).length() < 8) {
+								String name = m.group(1);
+//								logger.info("$  {}", name);
+								map.put("配偶者", name);
+								continue;
+							}
+						}
+						{
+							Pattern p = Pattern.compile("番戸(.+?)ト婚姻届出");
+							Matcher m = p.matcher(e);
+							if (m.find() && m.group(1).length() < 8) {
+								String name = m.group(1);
+//								logger.info("$  {}", name);
+								map.put("配偶者", name);
+								continue;
+							}
+						}
+						{
+							Pattern p = Pattern.compile("[0-9]日(.+?)と婚姻");
+							Matcher m = p.matcher(e);
+							if (m.find() && m.group(1).length() < 8) {
+								String name = m.group(1);
+//								logger.info("$  {}", name);
+								map.put("配偶者", name);
+								continue;
+							}
+						}
+						{
+							Pattern p = Pattern.compile("^(.+?)と婚姻");
+							Matcher m = p.matcher(e);
+							if (m.find() && m.group(1).length() < 8) {
+								String name = m.group(1);
+//								logger.info("$  {}", name);
+								map.put("配偶者", name);
+								continue;
+							}
+						}
+						{
+							Pattern p = Pattern.compile("^(.+?)ト婚姻届出");
+							Matcher m = p.matcher(e);
+							if (m.find() && m.group(1).length() < 8) {
+								String name = m.group(1);
+//								logger.info("$  {}", name);
+								map.put("配偶者", name);
+								continue;
+							}
+						}
 					} else if (e.contains("養嗣子")) {
 						// 養嗣子
 					} else if (e.contains("養子")) {
@@ -385,6 +505,15 @@ public class Main {
 						// 家督相続
 					} else if (e.contains("死亡")) {
 						// 死亡
+						key = "死亡";
+						if (map.containsKey(key)) {
+							String oldValue = map.get(key);
+							if (!value.equals(oldValue)) {
+								logger.warn("### DIFFERENT {}  {}  {}  {}", personID, key, oldValue, value);
+							}
+						} else {
+							map.put(key, date);
+						}
 					} else if (e.contains("分家")) {
 						// 分家
 					} else if (e.contains("隠居")) {
@@ -397,10 +526,29 @@ public class Main {
 						logger.info("$$ {}", e);
 					}
 				}
+				logger.info("person  {}  {}", personID, map);
 				
+				PersonDetail detail = new PersonDetail(person);
+				if (map.containsKey("死亡")) {
+					detail.deathDate = map.get("死亡");
+				}
+				if (map.containsKey("婚姻")) {
+					detail.marriageDate = map.get("婚姻");
+				}
+				if (map.containsKey("配偶者")) {
+					detail.spause = map.get("配偶者");
+				}
+				if (!detail.birthDate.isEmpty())    detail.birthYear    = String.format("%d", toYear(detail.birthDate));
+				if (!detail.marriageDate.isEmpty()) detail.marriageYear = String.format("%d", toYear(detail.marriageDate));
+				if (!detail.deathDate.isEmpty())    detail.deathYear    = String.format("%d", toYear(detail.deathDate));
+				details.add(detail);
 			}
 		}
-		logger.info("keySet {}", keySet);
+		
+		for(var e: details) {
+			logger.info("{}", String.format("%s,%s,%s,%s,%s,%s,%s,%s", e.familyName+e.givenName, e.birthDate, e.marriageDate, e.spause, e.deathDate, e.birthYear, e.marriageYear, e.deathYear));
+		}
+		CSVUtil.write(PersonDetail.class).withHeader(true).file("tmp/person-detail.csv", details);
 	}
 	
 	public static void main(String[] args) {
