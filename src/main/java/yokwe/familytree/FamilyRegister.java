@@ -26,7 +26,7 @@ public class FamilyRegister {
 	@Sheet.DataRow(1)
 	public static class Person extends Sheet {
 		@ColumnName("人物ID")
-		public String perrsonID;
+		public String personID;
 		@ColumnName("姓")
 		public String familyName;
 		@ColumnName("名")

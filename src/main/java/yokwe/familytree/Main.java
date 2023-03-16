@@ -1,11 +1,16 @@
 package yokwe.familytree;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import yokwe.familytree.FamilyRegister.Family;
 import yokwe.familytree.FamilyRegister.Person;
@@ -19,6 +24,146 @@ public class Main {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 	
 	public static String URL_FAMILY_REGISTER = StringUtil.toURLString("tmp/family-register.ods");
+	
+	public static class PersonMap {
+		private Map<String, Person> map = new LinkedHashMap<>();
+		
+		public PersonMap(List<Person> personList) {
+			for(var person: personList) {
+				if (map.containsKey(person.personID)) {
+					logger.error("Duplicate personID  {}", person.personID);
+					throw new UnexpectedException("Unpexpected");
+				} else {
+					map.put(person.personID, person);
+				}
+			}
+		}
+		public Set<String> keySet() {
+			return map.keySet();
+		}
+		public boolean containsKey(String personID) {
+			return map.containsKey(personID);
+		}
+		public Person get(String personID) {
+			if (map.containsKey(personID)) {
+				return map.get(personID);
+			} else {
+				logger.error("Unknown personID  {}", personID);
+				throw new UnexpectedException("Unpexpected");
+			}
+		}
+	}
+	public static class RegisterMap {
+		private Map<String, Register> map = new LinkedHashMap<>();
+		
+		public RegisterMap(List<Register> registerList) {
+			for(var register: registerList) {
+				if (map.containsKey(register.registerID)) {
+					logger.error("Duplicate registerID  {}", register.registerID);
+					throw new UnexpectedException("Unpexpected");
+				} else {
+					map.put(register.registerID, register);
+				}
+			}
+		}
+		public Set<String> keySet() {
+			return map.keySet();
+		}
+		public boolean containsKey(String personID) {
+			return map.containsKey(personID);
+		}
+		public Register get(String registerID) {
+			if (map.containsKey(registerID)) {
+				return map.get(registerID);
+			} else {
+				logger.error("Unknown registerID  {}", registerID);
+				throw new UnexpectedException("Unpexpected");
+			}
+		}
+	}
+	
+	public static class PersonEntry {
+		public final String registerID;
+		public final String key;
+		public final String value;
+		public       String format = null;
+		
+		public PersonEntry(Family family) {
+			this.registerID = family.registerID;
+			this.key        = family.type;
+			this.value      = family.detail;
+		}
+	}
+	public static class PersonEntryMap {
+		private Map<String, List<PersonEntry>> entryListMap = new TreeMap<>();
+		//          personID
+		private Map<String, String>      formatMap = new TreeMap<>();
+		//          personID
+		private Set<String> registerIDSet = new TreeSet<>();
+		
+		public PersonEntryMap(List<Family> familyList) {
+			for(var e: familyList) {
+				add(e);
+			}
+			fixFormat();
+		}
+		
+		public void add(Family family) {
+			registerIDSet.add(family.registerID);
+			
+			if (family.type.equals("形式")) formatMap.put(family.registerID, family.detail);
+			if (family.personID == null) return;
+			String key   = family.personID;
+			PersonEntry  entry = new PersonEntry(family);
+			
+			List<PersonEntry> list;
+			if (entryListMap.containsKey(key)) {
+				list = entryListMap.get(key);
+			} else {
+				list = new ArrayList<PersonEntry>();
+				entryListMap.put(key, list);
+			}
+			list.add(entry);
+		}
+		public Set<String> getPersonIDSet() {
+			return entryListMap.keySet();
+		}
+		public Set<String> getRegisterIDSet() {
+			return registerIDSet;
+		}
+		public Collection<List<PersonEntry>> values() {
+			return entryListMap.values();
+		}
+		public boolean containsKey(String personID) {
+			return entryListMap.containsKey(personID);
+		}
+		public List<PersonEntry>	get(String personID) {
+			if (entryListMap.containsKey(personID)) {
+				return entryListMap.get(personID);
+			} else {
+				logger.error("Unknown personID  {}", personID);
+				throw new UnexpectedException("Unpexpected");
+			}
+		}
+		public Set<Map.Entry<String, List<PersonEntry>>> entrySet() {
+			return entryListMap.entrySet();
+		}
+		public void fixFormat() {
+			for(var list: entryListMap.values()) {
+				for(var e: list) {
+					e.format = getFormat(e.registerID);
+				}
+			}
+		}
+		public String getFormat(String registerID) {
+			if (formatMap.containsKey(registerID)) {
+				return formatMap.get(registerID);
+			} else {
+				logger.error("Unknown registerID  {}", registerID);
+				throw new UnexpectedException("Unpexpected");
+			}
+		}
+	}
 
 	private static void load(List<Person> personList, List<Register> registerList, List<Family> familyList) {
 		SpreadSheet spreadSheet = new SpreadSheet(URL_FAMILY_REGISTER, true);
@@ -40,43 +185,23 @@ public class Main {
 		}
 	}
 	
-	private static void check(List<Person> personList, List<Register> registerList, List<Family> familyList) {
+	private static void check(PersonMap personMap, RegisterMap registerMap, PersonEntryMap personEntryMap) {
 		int countError = 0;
-		Map<String, Person>   personMap = new TreeMap<>();
-		// check personID duplicate in personList
-		for(var e: personList) {
-			if (personMap.containsKey(e.perrsonID)) {
-				logger.error("Duplicate person id {}", e.perrsonID);
-				countError++;
-			} else {
-				personMap.put(e.perrsonID, e);
-			}
-		}
-		Map<String, Register> registerMap = new TreeMap<>();
-		// check registerID duplicate in regeiserList
-		for(var e: registerList) {
-			if (registerMap.containsKey(e.registerID)) {
-				logger.error("Duplicate register id {}", e.registerID);
-				countError++;
-			} else {
-				registerMap.put(e.registerID, e);
-			}
-		}
 		// check personID with personID in familyList
 		{
 			Map<String, Integer> countMap = new TreeMap<>();
+			//  personID
 			for(var e: personMap.keySet()) {
 				countMap.put(e, 0);
 			}
 			Set<String> unknownSet = new TreeSet<>();
-			for(var e: familyList) {
-				String key = e.personID;
-				if (key != null) {
-					if (!personMap.containsKey(key)) {
-						unknownSet.add(key);
-					}
-					countMap.put(key, 1);
+			//  personID
+			Set<String> set = personEntryMap.getPersonIDSet();
+			for(var personID: set) {
+				if (!personMap.containsKey(personID)) {
+					unknownSet.add(personID);
 				}
+				countMap.put(personID, 1);
 			}
 			for(var e: unknownSet) {
 				logger.info("Unknown person id is used in familyList {}", e);
@@ -89,21 +214,21 @@ public class Main {
 				}
 			}
 		}
-		// check personID with personID in familyList
+		// check registerID with registerID in familyList
 		{
 			Map<String, Integer> countMap = new TreeMap<>();
+			//  registerID
 			for(var e: registerMap.keySet()) {
 				countMap.put(e, 0);
 			}
 			Set<String> unknownSet = new TreeSet<>();
-			for(var e: familyList) {
-				String key = e.registerID;
-				if (key != null) {
-					if (!registerMap.containsKey(key)) {
-						unknownSet.add(key);
-					}
-					countMap.put(key, 1);
+			//  registerID
+			Set<String> set = personEntryMap.getRegisterIDSet();
+			for(var registerID: set) {
+				if (!registerMap.containsKey(registerID)) {
+					unknownSet.add(registerID);
 				}
+				countMap.put(registerID, 1);
 			}
 			for(var e: unknownSet) {
 				logger.info("Unknown register id is used in familyList {}", e);
@@ -121,6 +246,163 @@ public class Main {
 		}
 	}
 	
+	public static class PersonDetail {
+		public String personID;
+		public String familyName;
+		public String givenName;
+		//
+		public String birthDate;
+		public String father;
+		public String mother;
+		
+		PersonDetail(Person person) {
+			this.personID   = person.personID;
+			this.familyName = person.familyName;
+			this.givenName  = person.givenName;
+			//
+			this.birthDate = new String();
+			this.father    = new String();
+			this.mother    = new String();
+		}
+	}
+	
+	
+	private static String normalizeFatherMother(String name) {
+		if (name.startsWith("亡")) name = name.substring(1);
+		return name;
+	}
+	
+	private static Pattern pat_DATE  = Pattern.compile("(..)(元|[0-9]{1,2})年([1,2]?[0-9])月([1-3]?[0-9])日");
+	private static String findDate(String string) {
+		Matcher m = pat_DATE.matcher(string);
+		if (m.find()) {
+			return m.group(0);
+		} else {
+			return null;
+		}
+	}
+	
+	private static void buildPersonMap(PersonMap personMap, RegisterMap registerMap, PersonEntryMap personEntryMap) {
+		Set<String> keySet = new TreeSet<>();
+		for(var personID: personEntryMap.getPersonIDSet()) {
+			Person person = personMap.get(personID);
+			List<PersonEntry> entryList = personEntryMap.get(personID);
+			String familyGivenName = person.familyName+person.givenName;
+			
+			// sanity check
+			{
+				Map<String, String> map = new TreeMap<>();
+				List<String> detailList = new ArrayList<>();
+				for(var e: entryList) {
+					String format     = e.format;
+					String key        = e.key;
+					String value      = e.value;
+					if (value == null) continue;
+					
+					keySet.add(key);
+					switch(key) {
+					case "出生":
+						break;
+					case "前戸主トノ続柄":
+						continue;
+					case "名前":
+						if (value.equals(familyGivenName)) value = person.givenName;
+						break;
+					case "家族トノ続柄":
+						continue;
+					case "戸主ト成リタル原因及ヒ年月日":
+						continue;
+					case "母":
+					case "父":
+						value = normalizeFatherMother(value);
+						break;
+					case "父母トノ続柄":
+						continue;
+					case "続柄":
+						if (!value.endsWith("男") && !value.endsWith("女")) continue;
+						break;
+					case "養母":
+						break;
+					case "養父":
+						break;
+					case "養父母トノ続柄":
+						break;
+					case "記載事項":
+						detailList.add(value);
+						continue;
+					default:
+						logger.error("Unknonw key {}", key);
+						throw new UnexpectedException("Unpexpected");
+					}
+					
+					if (map.containsKey(key)) {
+						String oldValue = map.get(key);
+						if (!oldValue.equals(value)) {
+							logger.warn("differenct value  {}  {}  {}  {}  {}", e.registerID, person.personID, key, oldValue, value);
+						}
+					} else {
+						map.put(key, value);
+					}
+				}
+				logger.info("person  {}  {}", personID, map);
+				for(var e: detailList) {
+					if (e.contains("裁判")) continue;
+					if (e.contains("追完")) continue;
+					if (e.contains("母ノ氏名及死亡旧戸籍ニ依リ記載")) continue;
+					if (e.contains("携帯入籍")) continue;
+					if (e.contains("共ニ入籍")) continue;
+					if (e.contains("出生")) continue;
+					if (e.contains("に従い除籍")) continue;
+					if (e.contains("に随い除籍")) continue;
+					if (e.contains("とともに除籍")) continue;
+					if (e.contains("分家ニ付キ") && e.contains("除籍")) continue;
+					if (e.contains("改製により")) continue;
+					if (e.contains("と更正")) continue;
+					if (e.contains("養子離婚")) continue;
+					if (e.contains("？？？？？")) continue;
+					if (e.contains("昭和32年法務省令第27号")) continue;
+					
+					String date = findDate(e);
+					if (date == null) {
+						logger.info("## {}", e);
+						continue;
+					}
+					if (e.contains("婚姻届出")) {
+						// 婚姻
+					} else if (e.contains("と婚姻")) {
+						// 婚姻
+					} else if (e.contains("入籍ス")) {
+						// 婚姻
+					} else if (e.contains("養嗣子")) {
+						// 養嗣子
+					} else if (e.contains("養子")) {
+						// 養子
+					} else if (e.contains("貰受")) {
+						// 養子
+					} else if (e.contains("家督相続")) {
+						// 家督相続
+					} else if (e.contains("相続ス")) {
+						// 家督相続
+					} else if (e.contains("死亡")) {
+						// 死亡
+					} else if (e.contains("分家")) {
+						// 分家
+					} else if (e.contains("隠居")) {
+						// 隠居
+					} else if (e.contains("廃嫡")) {
+						// 廃嫡
+					} else if (e.contains("嗣子")) {
+						// 嗣子
+					} else {
+						logger.info("$$ {}", e);
+					}
+				}
+				
+			}
+		}
+		logger.info("keySet {}", keySet);
+	}
+	
 	public static void main(String[] args) {
 		logger.info("START");
 
@@ -129,7 +411,14 @@ public class Main {
 		List<Family>   familyList   = new ArrayList<>();
 
 		load(personList, registerList, familyList);
-		check(personList, registerList, familyList);
+		
+		PersonMap   personMap         = new PersonMap(personList);
+		RegisterMap registerMap       = new RegisterMap(registerList);
+		PersonEntryMap personEntryMap = new PersonEntryMap(familyList);
+
+		check(personMap, registerMap, personEntryMap);
+		
+		buildPersonMap(personMap, registerMap, personEntryMap);
 		
 		logger.info("STOP");
 		System.exit(0);
