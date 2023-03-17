@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import yokwe.familytree.FamilyRegister.Family;
+import yokwe.familytree.FamilyRegister.Record;
 import yokwe.familytree.FamilyRegister.Person;
 import yokwe.familytree.FamilyRegister.Register;
 import yokwe.util.CSVUtil;
@@ -89,7 +89,7 @@ public class Main {
 		public final String value;
 		public       String format = null;
 		
-		public PersonEntry(Family family) {
+		public PersonEntry(Record family) {
 			this.registerID = family.registerID;
 			this.key        = family.type;
 			this.value      = family.detail;
@@ -102,14 +102,14 @@ public class Main {
 		//          personID
 		private Set<String> registerIDSet = new TreeSet<>();
 		
-		public PersonEntryMap(List<Family> familyList) {
+		public PersonEntryMap(List<Record> familyList) {
 			for(var e: familyList) {
 				add(e);
 			}
 			fixFormat();
 		}
 		
-		public void add(Family family) {
+		public void add(Record family) {
 			registerIDSet.add(family.registerID);
 			
 			if (family.type.equals("形式")) formatMap.put(family.registerID, family.detail);
@@ -166,7 +166,7 @@ public class Main {
 		}
 	}
 
-	private static void load(List<Person> personList, List<Register> registerList, List<Family> familyList) {
+	private static void load(List<Person> personList, List<Register> registerList, List<Record> familyList) {
 		SpreadSheet spreadSheet = new SpreadSheet(URL_FAMILY_REGISTER, true);
 		List<String> sheetNameList = spreadSheet.getSheetNameList();
 		for(var sheetName: sheetNameList) {
@@ -177,7 +177,7 @@ public class Main {
 				var list = Sheet.extractSheet(spreadSheet, Person.class, sheetName);
 				personList.addAll(list);
 			} else if (sheetName.startsWith("戸籍-")) {
-				var list = Sheet.extractSheet(spreadSheet, Family.class, sheetName);
+				var list = Sheet.extractSheet(spreadSheet, Record.class, sheetName);
 				familyList.addAll(list);
 			} else {
 				logger.info("Unknown sheetName {}", sheetName);
@@ -556,7 +556,7 @@ public class Main {
 
 		List<Person>   personList   = new ArrayList<>();
 		List<Register> registerList = new ArrayList<>();
-		List<Family>   familyList   = new ArrayList<>();
+		List<Record>   familyList   = new ArrayList<>();
 
 		load(personList, registerList, familyList);
 		
