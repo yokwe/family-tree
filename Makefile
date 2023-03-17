@@ -16,3 +16,7 @@ claen:
 
 run-main:
 	ant run-main
+	
+run-main2:
+	ant run-main2
+	
