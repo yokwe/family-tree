@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
-import yokwe.familytree.Detail.Type;
 import yokwe.familytree.FamilyRegister.Person;
 import yokwe.familytree.FamilyRegister.Record;
 import yokwe.familytree.FamilyRegister.Register;
@@ -28,15 +26,38 @@ public class Main2 {
 			this.key   = key;
 			this.value = value;
 		}
-	}	
+	}
+	
+	public static class PairList {
+		private List<Pair> list = new ArrayList<>();
+		
+		String findFirst (String key) {
+			for(var e: list) {
+				if (e.key.equals(key)) return e.value;
+			}
+			return null;
+		}
+		
+		List<String> find(String key) {
+			List<String> result = new ArrayList<>();
+			for(var e: list) {
+				if (e.key.equals(key)) result.add(e.value);
+			}
+			return result;
+		}
+		
+		void add(Pair pair) {
+			list.add(pair);
+		}
+	}
 	
 	
 	public static class Family {
 		String id;     // regiterID
 		String format;
 
-		List<Pair>              head = new ArrayList<>();
-		Map<String, List<Pair>> body = new TreeMap<>();
+		PairList              head = new PairList();
+		Map<String, PairList> body = new TreeMap<>();
 		//  personID
 		
 		Family(String id) {
@@ -44,10 +65,13 @@ public class Main2 {
 		}
 		
 		void init() {
-			format = find(head, "形式");
+			format = head.findFirst("形式");
 		}
 		
-		List<Pair> get(String personID) {
+		Set<String> keySet() {
+			return body.keySet();
+		}
+		PairList get(String personID) {
 			if (body.containsKey(personID)) {
 				return body.get(personID);
 			} else {
@@ -64,10 +88,11 @@ public class Main2 {
 			throw new UnexpectedException("Unpexpected");
 		}
 		String find(String key) {
-			return find(head, key);
+			return head.findFirst(key);
 		}
-		String find(String personID, String key) {
-			return find(get(personID), key);
+		String find(String key, String defaultValue) {
+			String result = head.findFirst(key);
+			return (result == null) ? defaultValue : result;
 		}
 	}
 	
@@ -113,11 +138,11 @@ public class Main2 {
 			if (record.personID == null) {
 				family.head.add(pair);
 			} else {
-				List<Pair> list;
+				PairList list;
 				if (family.body.containsKey(personID)) {
 					list = family.body.get(personID);
 				} else {
-					list = new ArrayList<>();
+					list = new PairList();
 					family.body.put(personID, list);
 				}
 				list.add(pair);
@@ -145,8 +170,30 @@ public class Main2 {
 		logger.info("map {}", familyMap.size());
 		for(var family: familyMap.values()) {
 			logger.info("family  {}  {}", family.id, family.format);
+			if (family.format.equals(FamilyRecord.M19.FORMAT)) {
+				// M19
+				String domicile = family.find("本籍地");
+				String previousHeadOfFamily = family.find("前戸主");
+				
+				// member of family
+				for(var personID: family.keySet()) {
+					PairList pairList = family.get(personID);
+					
+					String relationship = pairList.findFirst("続柄");
+					String name = pairList.findFirst("名前");
+					String relashionshipToFamily = pairList.findFirst("家族トノ続柄");
+					String birth = pairList.findFirst("出生");
+					
+					List<Detail> details = FamilyRecord.M19.toDetailList(pairList.find("記載事項"));
+					// FIXME 本籍
+					for(var e: details) {
+//						logger.info("DETAIL {}", e);
+					}
+					// FIXME
+				}
+				
+			}
 		}
-		
 		
 		logger.info("STOP");
 		System.exit(0);
