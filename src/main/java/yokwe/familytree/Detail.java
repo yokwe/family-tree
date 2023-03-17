@@ -32,6 +32,15 @@ public class Detail {
 		public Death(String string, JapaneseDate date) {
 			this(string, date, null);
 		}
+		
+		@Override
+		public String toString() {
+			if (place == null) {
+				return String.format("{%s %s}", date, type);
+			} else {
+				return String.format("{%s %s %s}", date, type, place);
+			}
+		}
 	}
 	
 	public static class Birth extends Detail {
@@ -43,6 +52,36 @@ public class Detail {
 		}
 		public Birth(String string, JapaneseDate date) {
 			this(string, date, null);
+		}
+		
+		@Override
+		public String toString() {
+			if (place == null) {
+				return String.format("{%s %s}", date, type);
+			} else {
+				return String.format("{%s %s %s}", date, type, place);
+			}
+		}
+	}
+	
+	public static class Marriage extends Detail {
+		public final String spouse;
+		
+		public Marriage(String string, JapaneseDate date, String spouse) {
+			super(string, date, Type.MARRIAGE);
+			this.spouse = spouse;
+		}
+		public Marriage(String string, JapaneseDate date) {
+			this(string, date, null);
+		}
+		
+		@Override
+		public String toString() {
+			if (spouse == null) {
+				return String.format("{%s %s}", date, type);
+			} else {
+				return String.format("{%s %s %s}", date, type, spouse);
+			}
 		}
 	}
 	
