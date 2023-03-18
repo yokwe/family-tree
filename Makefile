@@ -20,3 +20,6 @@ run-main:
 run-main2:
 	ant run-main2
 	
+run-main3:
+	ant run-main3
+	
