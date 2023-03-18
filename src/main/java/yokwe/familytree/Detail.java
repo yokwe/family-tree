@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import yokwe.util.UnexpectedException;
+
 public class Detail implements Comparable<Detail> {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
@@ -12,22 +14,42 @@ public class Detail implements Comparable<Detail> {
 		DEATH,
 		BIRTH,
 		MARRIAGE,
-		BRANCH_FAMILY,
+		BRANCH,
 		RETIREMENT,
 		DISINHERIT,
 		HEIR,
 	}
 	
+	public static Detail Death(JapaneseDate date, String value) {
+		return new Detail(date, Type.DEATH, value);
+	}
+	public static Detail Death(JapaneseDate date) {
+		return new Detail(date, Type.DEATH);
+	}
+	public static Detail Birth(JapaneseDate date, String value) {
+		return new Detail(date, Type.BIRTH, value);
+	}
+	public static Detail Birth(JapaneseDate date) {
+		return new Detail(date, Type.BIRTH);
+	}
+	public static Detail Marriage(JapaneseDate date, String value) {
+		return new Detail(date, Type.MARRIAGE, value);
+	}
+	public static Detail Marriage(JapaneseDate date) {
+		return new Detail(date, Type.MARRIAGE);
+	}
+	
+	
 	public final JapaneseDate date;
 	public final Type         type;
 	public final String       value;
 	
-	public Detail(JapaneseDate date, Type type, String value) {
+	private Detail(JapaneseDate date, Type type, String value) {
 		this.date   = date;
 		this.type   = type;
 		this.value  = value;
 	}
-	public Detail(JapaneseDate date, Type type) {
+	private Detail(JapaneseDate date, Type type) {
 		this(date, type, null);
 	}
 	
@@ -71,23 +93,24 @@ public class Detail implements Comparable<Detail> {
 				if (m.find()) {
 					String place = m.group(1);
 //					logger.info("DEATH  {}", place);
-					return new Detail(date, Type.DEATH, place);
+					return Detail.Death(date, place);
 				}
 //				logger.info("## {}", string);
-				return new Detail(date, Type.DEATH);
+				return Detail.Death(date);
 			}
 			if (string.contains("出生")) {
 				Matcher m = PAT_BIRTH.matcher(string);
 				if (m.find()) {
 					String place = m.group(1);
 //					logger.info("BIRTH  {}", place);
-					return new Detail(date, Type.BIRTH, place);
+					return Detail.Birth(date, place);
 				}
-				return new Detail(date, Type.BIRTH);
+				return Detail.Birth(date);
 			}
 			if (string.contains("入籍")) {
 				if (string.contains("携帯入籍")) return null;
-				return new Detail(date, Type.MARRIAGE);
+//				logger.info("MARRIAGE {}", string);
+				return Detail.Marriage(date);
 			}
 			if (string.contains("婚姻")) {
 				{
@@ -95,7 +118,7 @@ public class Detail implements Comparable<Detail> {
 					if (m.find()) {
 						String spouse = m.group(1);
 //						logger.info("MARRIAGE  {}", spouse);
-						return new Detail(date, Type.MARRIAGE, spouse);
+						return Detail.Marriage(date, spouse);
 					}
 				}
 				{
@@ -103,10 +126,11 @@ public class Detail implements Comparable<Detail> {
 					if (m.find()) {
 						String spouse = m.group(1);
 //						logger.info("MARRIAGE  {}", spouse);
-						return new Detail(date, Type.MARRIAGE, spouse);
+						return Detail.Marriage(date, spouse);
 					}
 				}
-//				logger.info("## {}", string);
+				logger.error("婚姻 {}!", string);
+				throw new UnexpectedException("Unpexpeced");
 			}
 			logger.info("## {}", string);
 			return null;
