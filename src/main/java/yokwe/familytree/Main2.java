@@ -173,18 +173,18 @@ public class Main2 {
 			if (family.format.equals(FamilyRecord.M19.FORMAT)) {
 				// M19
 				String domicile = family.find("本籍地");
-				String previousHeadOfFamily = family.find("前戸主");
+				String previousHead= family.find("前戸主");
 				
 				// member of family
 				for(var personID: family.keySet()) {
 					PairList pairList = family.get(personID);
 					
-					String relationship = pairList.findFirst("続柄");
+					String relation = pairList.findFirst("続柄");
 					String name = pairList.findFirst("名前");
-					String relashionshipToFamily = pairList.findFirst("家族トノ続柄");
-					String birth = pairList.findFirst("出生");
+					String relashionToFamily = pairList.findFirst("家族トノ続柄");
+					String birthdate = pairList.findFirst("出生");
 					
-					List<Detail> details = FamilyRecord.M19.toDetailList(pairList.find("記載事項"));
+					List<Detail> details = Detail.M19.toDetailList(pairList.find("記載事項"));
 					// FIXME 本籍
 					for(var e: details) {
 //						logger.info("DETAIL {}", e);
