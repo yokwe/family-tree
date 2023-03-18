@@ -64,7 +64,8 @@ public class Main3 {
 	public static void main(String[] args) {
 		logger.info("START");
 		
-		LifeEvent.Converter converter = new LifeEvent.Converter();		
+		LifeEvent.Converter converter = new LifeEvent.Converter();
+		LifeEvent.setVerboseString(true);
 		
 		List<Register> registerList = new ArrayList<>();
 		List<Person>   personList   = new ArrayList<>();

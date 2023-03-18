@@ -57,8 +57,23 @@ public class LifeEvent implements Comparable<LifeEvent> {
 	private LifeEvent(String string, Type type, String value) {
 		this(string, type, null, value);
 	}
+	
+	private static boolean verboseString = false;
+	public static void setVerboseString(boolean newValue) {
+		verboseString = newValue;
+	}
 	@Override
 	public String toString() {
+		if (verboseString) return toStringVerbose();
+		if (date == null) {
+			return String.format("{#### %s %s}", type, value);
+		} else if (value == null) {
+			return String.format("{%s %s}", date, type);
+		} else {
+			return String.format("{%s %s %s}", date, type, value);
+		}
+	}
+	private String toStringVerbose() {
 		if (date == null) {
 			return String.format("{#### %s %s  %s}", type, value, string);
 		} else if (value == null) {
