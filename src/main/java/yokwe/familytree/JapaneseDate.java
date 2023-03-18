@@ -10,6 +10,8 @@ import yokwe.util.UnexpectedException;
 public class JapaneseDate implements Comparable<JapaneseDate> {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
+	public static final JapaneseDate UNDEFIEND = new JapaneseDate("*UNDEFINED*", 0, 0, 0);
+
 	public static String findDateString(String string) {
 		Matcher m = pat_DATE.matcher(string);
 		if (m.find()) {
@@ -20,6 +22,7 @@ public class JapaneseDate implements Comparable<JapaneseDate> {
 	}
 	
 	public static JapaneseDate getInstance(String string) {
+		if (string == null) return UNDEFIEND;
 		String dateString = findDateString(string);
 		return dateString == null ? null : new JapaneseDate(dateString);
 	}
@@ -44,7 +47,7 @@ public class JapaneseDate implements Comparable<JapaneseDate> {
 		offsetMap.put("平成", 1989);
 		offsetMap.put("令和", 2019);
 	}
-	
+		
 	public final String string;
 	public final int    year;
 	public final int    month;
@@ -52,6 +55,12 @@ public class JapaneseDate implements Comparable<JapaneseDate> {
 	
 	private static Pattern pat_DATE  = Pattern.compile("(..)(元|[0-9]{1,2})年([1,2]?[0-9])月([1-3]?[0-9])日");
 
+	private JapaneseDate(String string, int year, int month, int day) {
+		this.string = string;
+		this.year   = year;
+		this.month  = month;
+		this.day    = day;
+	}
 	private JapaneseDate(String newValue) {
 		string = newValue;
 		Matcher m = pat_DATE.matcher(string);
@@ -76,6 +85,10 @@ public class JapaneseDate implements Comparable<JapaneseDate> {
 			logger.error("string {}!", string);
 			throw new UnexpectedException("Unpexpeced string");
 		}
+	}
+	
+	boolean isDefined() {
+		return !equals(UNDEFIEND);
 	}
 
 	@Override
