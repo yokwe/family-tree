@@ -135,6 +135,22 @@ public class LifeEvent implements Comparable<LifeEvent> {
 }
 
 
+// DEATH,
+// BIRTH,
+// MARRIAGE,
+// BRANCH,
+// RETIREMENT,
+class Retirement implements LifeEvent.Handler {
+	public static final String KEYWORD = "隠居";
+
+	@Override
+	public LifeEvent toLiveEvent(String string) {
+		JapaneseDate date = JapaneseDate.getInstance(string);
+		if (date == null) return null;
+		return LifeEvent.retirement(string, date);
+	}
+}
+// DISALLOW_INHERIT,
 class DisallowInherit implements LifeEvent.Handler {
 	public static final String KEYWORD = "廃嫡";
 
@@ -145,6 +161,7 @@ class DisallowInherit implements LifeEvent.Handler {
 		return LifeEvent.disallowInherit(string, date);
 	}
 }
+// ALLOW_INHERIT,
 class AllowInherit implements LifeEvent.Handler {
 	public static final String KEYWORD = "嗣子願済";
 
@@ -155,6 +172,7 @@ class AllowInherit implements LifeEvent.Handler {
 		return LifeEvent.allowInherit(string, date);
 	}
 }
+// INHERIT,
 class Inherit implements LifeEvent.Handler {
 	public static final String KEYWORD = "相続";
 
@@ -166,15 +184,3 @@ class Inherit implements LifeEvent.Handler {
 		return LifeEvent.inherit(string, date);
 	}
 }
-class Retirement implements LifeEvent.Handler {
-	public static final String KEYWORD = "隠居";
-
-	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.retirement(string, date);
-	}
-}
-
-
