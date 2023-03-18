@@ -15,6 +15,8 @@ public abstract class FamilyRecord {
 	}
 	
 	public static class M19 extends FamilyRecord {
+		public static final String FORMAT = "明治19年式";
+
 		public static class Member {
 			public final String name;
 			public final String relation;
@@ -36,8 +38,6 @@ public abstract class FamilyRecord {
 			}
 		}
 
-		public static final String FORMAT = "明治19年式";
-		
 		public final String        previousHead;
 		public final Member        head;
 		public final List<Member>  members = new ArrayList<>();
@@ -53,8 +53,28 @@ public abstract class FamilyRecord {
 		}
 	}
 	
-	public static class M31  {
+	public static class M31 extends FamilyRecord {
 		public static final String FORMAT = "明治31年式";
+
+		// FIXME Member
+		public static class Member {
+			
+		}
+		
+		public final String        previousHead;
+		// FIXME heead
+		public final Member        head;
+		public final List<Member>  members = new ArrayList<>();
+
+		M31(String format, String id, String domicile,
+			String previousHead, Member head, List<Member> members) {
+			super(FORMAT, id, domicile);
+			this.previousHead = previousHead;
+			this.head         = head;
+		}
+		void addMember(Member member) {
+			members.add(member);
+		}
 	}
 	public static class T04  {
 		public static final String FORMAT = "大正4年式";

@@ -33,6 +33,8 @@ public class FamilyRegister {
 		public String previousHeadOfFamily;
 		@ColumnName("戸主")
 		public String headOfFamily;
+		@ColumnName("本籍地")
+		public String domicile;
 	}
 	
 	@Sheet.SheetName("人物一覧")
@@ -121,12 +123,17 @@ public class FamilyRegister {
 		return familyList.stream().filter(o -> o.registerID.equals(registerID)).collect(Collectors.toList());
 	}
 	
+	public static final String FORMAT_M19 = "明治19年式";
+	public static final String FORMAT_M31 = "明治31年式";
+	public static final String FORMAT_T04 = "大正4年式";
+	public static final String FORMAT_S23 = "昭和23年式";
+	
 	private static Set<String> validFormat = new HashSet<>();
 	static {
-		validFormat.add(FamilyRecord.M19.FORMAT);
-		validFormat.add(FamilyRecord.M31.FORMAT);
-		validFormat.add(FamilyRecord.T04.FORMAT);
-		validFormat.add(FamilyRecord.S23.FORMAT);
+		validFormat.add(FORMAT_M19);
+		validFormat.add(FORMAT_M31);
+		validFormat.add(FORMAT_T04);
+		validFormat.add(FORMAT_S23);
 	}
 	
 	private static void check(List<Register> registerList, List<Person> personList, List<Record> familyList) {		

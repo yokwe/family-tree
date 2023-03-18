@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import yokwe.familytree.FamilyRecord.M19.Member;
 import yokwe.util.UnexpectedException;
 
 public class Detail implements Comparable<Detail> {
@@ -111,47 +112,26 @@ public class Detail implements Comparable<Detail> {
 			
 			if (string.contains("死亡")) {
 				Matcher m = PAT_DEATH.matcher(string);
-				if (m.find()) {
-					String place = m.group(1);
-//					logger.info("DEATH  {}", place);
-//					logger.info("##     {}", string);
-					return Detail.death(date, place);
-				}
-//				logger.info("DEATH");
-//				logger.info("##    {}", string);
+				if (m.find()) return Detail.death(date, m.group(1));
 				return Detail.death(date);
 			}
 			if (string.contains("出生")) {
 				Matcher m = PAT_BIRTH.matcher(string);
-				if (m.find()) {
-					String place = m.group(1);
-//					logger.info("BIRTH  {}", place);
-//					logger.info("AA     {}", string);
-					return Detail.birth(JapaneseDate.UNDEFIEND, place);
-				}
+				if (m.find()) return Detail.birth(JapaneseDate.UNDEFIEND, m.group(1));
 				return null;
 			}
 			if (string.contains("入籍")) {
 				if (string.contains("携帯入籍")) return null;
-//				logger.info("MARRIAGE {}", string);
 				return Detail.marriage(date);
 			}
 			if (string.contains("婚姻")) {
 				{
 					Matcher m = PAT_MARRIAGE_A.matcher(string);
-					if (m.find()) {
-						String spouse = m.group(1);
-//						logger.info("MARRIAGE  {}", spouse);
-						return Detail.marriage(date, spouse);
-					}
+					if (m.find()) return Detail.marriage(date, m.group(1));
 				}
 				{
 					Matcher m = PAT_MARRIAGE_B.matcher(string);
-					if (m.find()) {
-						String spouse = m.group(1);
-//						logger.info("MARRIAGE  {}", spouse);
-						return Detail.marriage(date, spouse);
-					}
+					if (m.find()) return Detail.marriage(date, m.group(1));
 				}
 				logger.error("婚姻 {}!", string);
 				throw new UnexpectedException("Unpexpeced");
@@ -160,25 +140,15 @@ public class Detail implements Comparable<Detail> {
 				if (string.contains("ニ従ヒ分家ス")) return null;
 				{
 					Matcher m = PAT_BRANCH_A.matcher(string);
-					if (m.find()) {
-						String place = m.group(1);
-//						logger.info("BRANCH  {}", place);
-						return Detail.branch(date, place);
-					}
+					if (m.find()) return Detail.branch(date, m.group(1));
 				}
 				{
 					Matcher m = PAT_BRANCH_B.matcher(string);
-					if (m.find()) {
-						String place = m.group(1);
-//						logger.info("BRANCH  {}", place);
-						return Detail.branch(date, place);
-					}
+					if (m.find()) return Detail.branch(date, m.group(1));
 				}
-//				logger.info("## {}", string);
 				return Detail.branch(date);
 			}
 			if (string.contains("隠居")) {
-//				logger.info("## {}", string);
 				return Detail.retirement(date);
 			}
 			if (string.contains("願済廃嫡") || string.contains("廃嫡願済")) {
@@ -203,4 +173,24 @@ public class Detail implements Comparable<Detail> {
 			return result;
 		}
 	}
+	
+	public static class M31 {
+		
+		public static Detail getInstance(String string) {
+			logger.info("## M31 {}", string);
+			return null;
+		}
+		
+		public static List<Detail> toDetailList(List<String> list) {
+			List<Detail> result = new ArrayList<>();
+			for(var e: list) {
+				Detail detail = getInstance(e);
+				if (detail != null) result.add(detail);
+			}
+			return result;
+		}
+	}
+	
+	
+	
 }
