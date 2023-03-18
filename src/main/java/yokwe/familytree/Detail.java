@@ -16,27 +16,46 @@ public class Detail implements Comparable<Detail> {
 		MARRIAGE,
 		BRANCH,
 		RETIREMENT,
-		DISINHERIT,
-		HEIR,
+		INHERIT_DISALLOW,
+		INHERIT_ALLOW,
+		INHERIT,
 	}
 	
-	public static Detail Death(JapaneseDate date, String value) {
+	public static Detail death(JapaneseDate date, String value) {
 		return new Detail(date, Type.DEATH, value);
 	}
-	public static Detail Death(JapaneseDate date) {
+	public static Detail death(JapaneseDate date) {
 		return new Detail(date, Type.DEATH);
 	}
-	public static Detail Birth(JapaneseDate date, String value) {
+	public static Detail birth(JapaneseDate date, String value) {
 		return new Detail(date, Type.BIRTH, value);
 	}
-	public static Detail Birth(JapaneseDate date) {
+	public static Detail birth(JapaneseDate date) {
 		return new Detail(date, Type.BIRTH);
 	}
-	public static Detail Marriage(JapaneseDate date, String value) {
+	public static Detail marriage(JapaneseDate date, String value) {
 		return new Detail(date, Type.MARRIAGE, value);
 	}
-	public static Detail Marriage(JapaneseDate date) {
+	public static Detail marriage(JapaneseDate date) {
 		return new Detail(date, Type.MARRIAGE);
+	}
+	public static Detail branch(JapaneseDate date, String value) {
+		return new Detail(date, Type.BRANCH, value);
+	}
+	public static Detail branch(JapaneseDate date) {
+		return new Detail(date, Type.BRANCH);
+	}
+	public static Detail retirement(JapaneseDate date) {
+		return new Detail(date, Type.RETIREMENT);
+	}
+	public static Detail disallowInherit(JapaneseDate date) {
+		return new Detail(date, Type.INHERIT_DISALLOW);
+	}
+	public static Detail allowInherit(JapaneseDate date) {
+		return new Detail(date, Type.INHERIT_ALLOW);
+	}
+	public static Detail inherit(JapaneseDate date) {
+		return new Detail(date, Type.INHERIT);
 	}
 	
 	
@@ -83,7 +102,9 @@ public class Detail implements Comparable<Detail> {
 		private static final Pattern PAT_BIRTH      = Pattern.compile("^(.+?)ニ於テ出生");
 		private static final Pattern PAT_MARRIAGE_A = Pattern.compile("番[戸地](.+?)ト婚姻届出");
 		private static final Pattern PAT_MARRIAGE_B = Pattern.compile("^(.+?)ト婚姻届出");
-		
+		private static final Pattern PAT_BRANCH_A   = Pattern.compile("^(.+?)ニ分家届出");
+		private static final Pattern PAT_BRANCH_B   = Pattern.compile("日(.+?)エ分家ス");
+
 		public static Detail getInstance(String string) {
 			JapaneseDate date = JapaneseDate.getInstance(string);
 			if (date == null) return null;
@@ -93,24 +114,27 @@ public class Detail implements Comparable<Detail> {
 				if (m.find()) {
 					String place = m.group(1);
 //					logger.info("DEATH  {}", place);
-					return Detail.Death(date, place);
+//					logger.info("##     {}", string);
+					return Detail.death(date, place);
 				}
-//				logger.info("## {}", string);
-				return Detail.Death(date);
+//				logger.info("DEATH");
+//				logger.info("##    {}", string);
+				return Detail.death(date);
 			}
 			if (string.contains("出生")) {
 				Matcher m = PAT_BIRTH.matcher(string);
 				if (m.find()) {
 					String place = m.group(1);
 //					logger.info("BIRTH  {}", place);
-					return Detail.Birth(date, place);
+//					logger.info("AA     {}", string);
+					return Detail.birth(JapaneseDate.UNDEFIEND, place);
 				}
-				return Detail.Birth(date);
+				return null;
 			}
 			if (string.contains("入籍")) {
 				if (string.contains("携帯入籍")) return null;
 //				logger.info("MARRIAGE {}", string);
-				return Detail.Marriage(date);
+				return Detail.marriage(date);
 			}
 			if (string.contains("婚姻")) {
 				{
@@ -118,7 +142,7 @@ public class Detail implements Comparable<Detail> {
 					if (m.find()) {
 						String spouse = m.group(1);
 //						logger.info("MARRIAGE  {}", spouse);
-						return Detail.Marriage(date, spouse);
+						return Detail.marriage(date, spouse);
 					}
 				}
 				{
@@ -126,13 +150,47 @@ public class Detail implements Comparable<Detail> {
 					if (m.find()) {
 						String spouse = m.group(1);
 //						logger.info("MARRIAGE  {}", spouse);
-						return Detail.Marriage(date, spouse);
+						return Detail.marriage(date, spouse);
 					}
 				}
 				logger.error("婚姻 {}!", string);
 				throw new UnexpectedException("Unpexpeced");
 			}
-			logger.info("## {}", string);
+			if (string.contains("分家")) {
+				if (string.contains("ニ従ヒ分家ス")) return null;
+				{
+					Matcher m = PAT_BRANCH_A.matcher(string);
+					if (m.find()) {
+						String place = m.group(1);
+//						logger.info("BRANCH  {}", place);
+						return Detail.branch(date, place);
+					}
+				}
+				{
+					Matcher m = PAT_BRANCH_B.matcher(string);
+					if (m.find()) {
+						String place = m.group(1);
+//						logger.info("BRANCH  {}", place);
+						return Detail.branch(date, place);
+					}
+				}
+//				logger.info("## {}", string);
+				return Detail.branch(date);
+			}
+			if (string.contains("隠居")) {
+//				logger.info("## {}", string);
+				return Detail.retirement(date);
+			}
+			if (string.contains("願済廃嫡") || string.contains("廃嫡願済")) {
+				return Detail.disallowInherit(date);
+			}
+			if (string.contains("嗣子願済")) {
+				return Detail.allowInherit(date);
+			}
+			if (string.contains("相続ス")) {
+				return Detail.inherit(date);
+			}
+			logger.info("## M19 {}", string);
 			return null;
 		}
 
