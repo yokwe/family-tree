@@ -14,12 +14,15 @@ build: build-yokwe
 claen:
 	mvn clean
 
-run-main:
+clear-log:
+	echo -n >tmp/family-tree.log
+
+run-main: clear-log
 	ant run-main
 	
-run-main2:
+run-main2: clear-log
 	ant run-main2
 	
-run-main3:
+run-main3: clear-log
 	ant run-main3
 	
