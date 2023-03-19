@@ -106,6 +106,7 @@ public class Main3 {
 				var member   = entry2.getValue();
 				var person   = personMap.get(personID);
 				
+				logger.info("## {}", personID);
 				for(var string: member.find("記載事項")) {
 					// convert string to LifeEvent
 					LifeEvent event = converter.toLifeEvent(string);
