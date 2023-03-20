@@ -6,7 +6,7 @@
       <!-- 
        <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %-8logger{0} - %msg%n</pattern>
       -->
-      <pattern>%date [%thread] %-5level %-8logger{0} - %msg%n</pattern>
+      <pattern>%-5level %-8logger{0} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -16,7 +16,7 @@
       <!-- 
        <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %-8logger{0} - %msg%n</pattern>
       -->
-      <pattern>%date [%thread] %-5level %-8logger{0} - %msg%n</pattern>
+      <pattern>%-5level %-8logger{0} - %msg%n</pattern>
     </encoder>
   </appender>
   
