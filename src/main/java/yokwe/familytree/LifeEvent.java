@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import yokwe.familytree.Detail.Type;
+import yokwe.util.UnexpectedException;
 
 public class LifeEvent implements Comparable<LifeEvent> {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
@@ -33,7 +33,6 @@ public class LifeEvent implements Comparable<LifeEvent> {
 			return name;
 		}
 	}
-	
 	
 	public final String       string;
 	public final Type         type;
@@ -132,7 +131,7 @@ public class LifeEvent implements Comparable<LifeEvent> {
 			for(var pair: list) {
 				if (pair.matcher.reset(string).find()) return pair.handler.toLiveEvent(string);
 			}
-			logger.info("##  {}", string);
+			logger.debug("## REJECT {}", string);
 			return null;
 		}
 	}
@@ -153,33 +152,49 @@ abstract class BaseHandler implements LifeEvent.Handler {
 		}
 	}
 	
-	abstract protected LifeEvent getInstance(String string, JapaneseDate date, String value);
-	protected LifeEvent getInstance(String string, JapaneseDate date) {
-		return getInstance(string, date, null);
+	protected LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, getType(), date, value);
 	}
-	protected LifeEvent getInstance(String string, String value) {
-		return getInstance(string, null, value);
-	}
+	
+	abstract LifeEvent.Type getType();
 	
 	@Override
 	public LifeEvent toLiveEvent(String string) {
+		// use concrete class name for logger
+		final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(this.getClass());
+		
 		for(var m: excludes) {
-			if (m.reset(string).find()) return null;
+			if (m.reset(string).find()) {
+				logger.debug("## {} REJECT {}", getType(), string);
+				return null;
+			}
 		}
 
 		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
+		if (date == null) {
+			logger.debug("## {} REJECT {}", getType(), string);
+			return null;
+		}
 
 		if (includes.isEmpty()) {
-			return getInstance(string, date);
+			return getInstance(string, date, null);
 		} else {
 			for(var m: includes) {
 				if (m.reset(string).find()) {
-					String value = m.group(1);
-					return getInstance(string, date, value);
+					int count = m.groupCount();
+					if (count == 0) {
+						return getInstance(string, date, null);
+					} else if (count == 1){
+						String value = m.group(1);
+						return getInstance(string, date, value);
+					} else {
+						logger.error("count {}", count);
+						throw new UnexpectedException("Unexpeted");
+					}
 				}
 			}
 		}
+		logger.debug("## {} REJECT {}", getType(), string);
 		return null;
 	}
 }
@@ -195,8 +210,13 @@ class Birth extends BaseHandler {
 			"\"日(.+?)で出生\"");
 	}
 	
+	@Override
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.BIRTH;
+	}
+	@Override
 	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.BIRTH, null, value);
+		return super.getInstance(string, null, value);
 	}
 }
 // DEATH          ("死亡"),
@@ -204,19 +224,23 @@ class Death extends BaseHandler {
 	public static final String KEYWORD = "死亡";
 
 	Death() {
+		exclude(
+			"日夫"
+		);
 		include(
 			"分(.+?)ニ於テ死亡",
 			"時(.+?)ニ於テ死亡",
 			"日(.+?)ニ於テ死亡",
 			"分(.+?)で死亡",
 			"時(.+?)で死亡",
-			"日(.+?)で死亡"
+			"日(.+?)で死亡",
+			"死亡$"
 		);
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.DEATH, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.DEATH;
 	}
 }
 // MARRIAGE        ("結婚"),
@@ -239,8 +263,8 @@ class Marriage extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.MARRIAGE, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.MARRIAGE;
 	}
 }
 // ADOPTION        ("養子"),
@@ -252,8 +276,8 @@ class Adoption extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.ADOPTION, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.ADOPTION;
 	}
 }
 // DIVORCE         ("離婚"),
@@ -265,8 +289,8 @@ class Divorce extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.DIVORCE, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.DIVORCE;
 	}
 }
 // BRANCH          ("分家"),
@@ -278,8 +302,8 @@ class Branch extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.BRANCH, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.BRANCH;
 	}
 }
 // RETIREMENT      ("隠居"),
@@ -291,8 +315,8 @@ class Retirement extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.RETIREMENT, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.RETIREMENT;
 	}
 }
 // DISALLOW_INHERIT("廃嫡"),
@@ -304,8 +328,8 @@ class DisallowInherit extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.DISALLOW_INHERIT, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.DISALLOW_INHERIT;
 	}
 }
 // ALLOW_INHERIT   ("嗣子"),
@@ -317,8 +341,8 @@ class AllowInherit extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.ALLOW_INHERIT, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.ALLOW_INHERIT;
 	}
 }
 // INHERIT         ("相続");
@@ -330,7 +354,7 @@ class Inherit extends BaseHandler {
 	}
 	
 	@Override
-	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, LifeEvent.Type.INHERIT, date, value);
+	LifeEvent.Type getType() {
+		return LifeEvent.Type.INHERIT;
 	}
 }
