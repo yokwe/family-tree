@@ -133,17 +133,21 @@ public class Main3 {
 				int ret = 0;
 				if (ret == 0) ret = a.event.type.compareTo(b.event.type);
 				if (ret == 0) ret = a.personID.compareTo(b.personID);
-				if (ret == 0) ret = a.event.date.compareTo(b.event.date);
+				if (ret == 0 && a.event.date == null && b.event.date != null) ret = -1;
+				if (ret == 0 && a.event.date != null && b.event.date == null) ret = 1;
+				if (ret == 0 && a.event.date != null && b.event.date != null) ret = a.event.date.compareTo(b.event.date);
 				return ret;
 			});
 			for(var e: list) {
 				String type = e.event.type.toString();
-				String date = e.event.date.toString();
+				String date = e.event.date == null ? "****" : e.event.date.toString();
+				String value = e.event.value == null ? "****" : e.event.value;
 				
-				logger.info("## event  {}", String.format("%s  %s  %s  %s",
+				logger.info("## event  {}", String.format("%s  %s  %s  %s  %s",
 					type,
 					StringUtil.padRightSpace(e.personID, 14),
 					StringUtil.padRightSpace(date, 16),
+					StringUtil.padRightSpace(value, 30),
 					e.event.string));
 			}
 		}
