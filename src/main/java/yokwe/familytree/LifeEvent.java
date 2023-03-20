@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import yokwe.familytree.Detail.Type;
+
 public class LifeEvent implements Comparable<LifeEvent> {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
@@ -32,58 +34,22 @@ public class LifeEvent implements Comparable<LifeEvent> {
 		}
 	}
 	
-	public static LifeEvent birth(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.BIRTH, date);
-	}
-	public static LifeEvent birth(String string, String place) {
-		return new LifeEvent(string, Type.BIRTH, null, place);
-	}
-	public static LifeEvent death(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.DEATH, date);
-	}
-	public static LifeEvent death(String string, JapaneseDate date, String place) {
-		return new LifeEvent(string, Type.DEATH, date, place);
-	}
-	public static LifeEvent marriage(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.MARRIAGE, date);
-	}
-	public static LifeEvent adoption(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.ADOPTION, date);
-	}
-	public static LifeEvent divorce(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.DIVORCE, date);
-	}
-	public static LifeEvent branch(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.BRANCH, date);
-	}
-	public static LifeEvent retirement(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.RETIREMENT, date);
-	}
-	public static LifeEvent disallowInherit(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.DISALLOW_INHERIT, date);
-	}
-	public static LifeEvent allowInherit(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.ALLOW_INHERIT, date);
-	}
-	public static LifeEvent inherit(String string, JapaneseDate date) {
-		return new LifeEvent(string, Type.INHERIT, date);
-	}
 	
 	public final String       string;
 	public final Type         type;
 	public final JapaneseDate date;
 	public final String       value;
 	
-	private LifeEvent(String string, Type type, JapaneseDate date, String value) {
+	public LifeEvent(String string, Type type, JapaneseDate date, String value) {
 		this.string = string;
 		this.type   = type;
 		this.date   = date;
 		this.value  = value;
 	}
-	private LifeEvent(String string, Type type, JapaneseDate date) {
+	public LifeEvent(String string, Type type, JapaneseDate date) {
 		this(string, type, date, null);
 	}
-	private LifeEvent(String string, Type type, String value) {
+	public LifeEvent(String string, Type type, String value) {
 		this(string, type, null, value);
 	}
 	
@@ -147,9 +113,9 @@ public class LifeEvent implements Comparable<LifeEvent> {
 		public Converter() {
 			addHandler(Birth.KEYWORD,           new Birth());
 			// FIXME FROM HERE
-			addHandler(Marriage.KEYWORD,        new Marriage());
 			addHandler(Adoption.KEYWORD,        new Adoption());
 			addHandler(Divorce.KEYWORD,         new Divorce());
+			addHandler(Marriage.KEYWORD,        new Marriage());
 			addHandler(Branch.KEYWORD,          new Branch());
 			// FIXME UNTIL HERE
 			addHandler(DisallowInherit.KEYWORD, new DisallowInherit());
@@ -173,165 +139,198 @@ public class LifeEvent implements Comparable<LifeEvent> {
 }
 
 
-// DEATH           ("出生"),
-class Birth implements LifeEvent.Handler {
-	public static final String KEYWORD = "出生";
+abstract class BaseHandler implements LifeEvent.Handler {
+	protected List<Matcher> includes = new ArrayList<>();
+	protected void include(String... args) {
+		for(var e: args) {
+			includes.add(Pattern.compile(e).matcher(""));
+		}
+	}
+	protected List<Matcher> excludes = new ArrayList<>();
+	protected void exclude(String... args) {
+		for(var e: args) {
+			excludes.add(Pattern.compile(e).matcher(""));
+		}
+	}
 	
-	private static Matcher M_A = Pattern.compile("^(.+?)ニ於テ出生").matcher("");
-	private static Matcher M_B = Pattern.compile("日(.+?)で出生").matcher("");
+	abstract protected LifeEvent getInstance(String string, JapaneseDate date, String value);
+	protected LifeEvent getInstance(String string, JapaneseDate date) {
+		return getInstance(string, date, null);
+	}
+	protected LifeEvent getInstance(String string, String value) {
+		return getInstance(string, null, value);
+	}
 	
 	@Override
 	public LifeEvent toLiveEvent(String string) {
-		M_A.reset(string);
-		if (M_A.find()) {
-			String place = M_A.group(1);
-			return LifeEvent.birth(string, place);
+		for(var m: excludes) {
+			if (m.reset(string).find()) return null;
 		}
-		M_B.reset(string);
-		if (M_B.find()) {
-			String place = M_B.group(1);
-			return LifeEvent.birth(string, place);
+
+		JapaneseDate date = JapaneseDate.getInstance(string);
+		if (date == null) return null;
+
+		if (includes.isEmpty()) {
+			return getInstance(string, date);
+		} else {
+			for(var m: includes) {
+				if (m.reset(string).find()) {
+					String value = m.group(1);
+					return getInstance(string, date, value);
+				}
+			}
 		}
-		if (string.contains("出生届出")) return null;
-		// return LifeEvent.birth("## " + string, date);
 		return null;
 	}
 }
-// BIRTH           ("死亡"),
-class Death implements LifeEvent.Handler {
+
+// BIRTH           ("出生"),
+class Birth extends BaseHandler {
+	public static final String KEYWORD = "出生";
+	
+	Birth() {
+//		exclude("出生届出");
+		include(
+			"^(.+?)ニ於テ出生",
+			"\"日(.+?)で出生\"");
+	}
+	
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.BIRTH, null, value);
+	}
+}
+// DEATH          ("死亡"),
+class Death extends BaseHandler {
 	public static final String KEYWORD = "死亡";
 
-	private static Matcher M_A = Pattern.compile("日夫.*死亡$").matcher("");
-	private static Matcher M_B = Pattern.compile("日死亡$").matcher("");
-	private static Matcher M_C = Pattern.compile("分(.+?)ニ於テ死亡").matcher("");
-	private static Matcher M_D = Pattern.compile("時(.+?)ニ於テ死亡").matcher("");
-	private static Matcher M_E = Pattern.compile("日(.+?)ニ於テ死亡").matcher("");
-	private static Matcher M_F = Pattern.compile("分(.+?)で死亡").matcher("");
-	private static Matcher M_G = Pattern.compile("時(.+?)で死亡").matcher("");
-	private static Matcher M_H = Pattern.compile("日(.+?)で死亡").matcher("");
+	Death() {
+		include(
+			"分(.+?)ニ於テ死亡",
+			"時(.+?)ニ於テ死亡",
+			"日(.+?)ニ於テ死亡",
+			"分(.+?)で死亡",
+			"時(.+?)で死亡",
+			"日(.+?)で死亡"
+		);
+	}
 	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		if (M_A.reset(string).find()) return null;
-		if (M_B.reset(string).find()) {
-			return LifeEvent.death(string, date);
-		}
-		if (M_C.reset(string).find()) {
-			String place = M_C.group(1);
-			return LifeEvent.death(string, date, place);
-		}
-		if (M_D.reset(string).find()) {
-			String place = M_D.group(1);
-			return LifeEvent.death(string, date, place);
-		}
-		if (M_E.reset(string).find()) {
-			String place = M_E.group(1);
-			return LifeEvent.death(string, date, place);
-		}
-		if (M_F.reset(string).find()) {
-			String place = M_F.group(1);
-			return LifeEvent.death(string, date, place);
-		}
-		if (M_G.reset(string).find()) {
-			String place = M_G.group(1);
-			return LifeEvent.death(string, date, place);
-		}
-		if (M_H.reset(string).find()) {
-			String place = M_H.group(1);
-			return LifeEvent.death(string, date, place);
-		}
-		// return LifeEvent.birth("## " + string, date);
-		return null;
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.DEATH, date, value);
 	}
 }
 // MARRIAGE        ("結婚"),
-class Marriage implements LifeEvent.Handler {
+class Marriage extends BaseHandler {
 	public static final String KEYWORD = "入籍|婚姻";
 
+	Marriage() {
+		exclude(
+			"携帯入籍",
+			"共ニ入籍",
+			"死亡");
+		include(
+			"日(.+?)ト婚姻",
+			"番[地戸](.+?)ト婚姻",
+			"日(.+)入籍ス",
+			"^(.+)ト婚姻届出.+受付$",
+			"^(.+)と婚姻夫の氏を称する旨",
+			"日(.+)と婚姻届出",
+			"^(.+)と婚姻届出");
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.marriage(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.MARRIAGE, date, value);
 	}
 }
 // ADOPTION        ("養子"),
-class Adoption implements LifeEvent.Handler {
+class Adoption extends BaseHandler {
 	public static final String KEYWORD = "養子";
 
+	Adoption() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.adoption(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.ADOPTION, date, value);
 	}
 }
 // DIVORCE         ("離婚"),
-class Divorce implements LifeEvent.Handler {
+class Divorce extends BaseHandler {
 	public static final String KEYWORD = "離婚";
 
+	Divorce() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.divorce(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.DIVORCE, date, value);
 	}
 }
 // BRANCH          ("分家"),
-class Branch implements LifeEvent.Handler {
+class Branch extends BaseHandler {
 	public static final String KEYWORD = "分家";
-
+	
+	Branch() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.branch(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.BRANCH, date, value);
 	}
 }
 // RETIREMENT      ("隠居"),
-class Retirement implements LifeEvent.Handler {
+class Retirement extends BaseHandler {
 	public static final String KEYWORD = "隠居";
 
+	Retirement() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.retirement(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.RETIREMENT, date, value);
 	}
 }
 // DISALLOW_INHERIT("廃嫡"),
-class DisallowInherit implements LifeEvent.Handler {
+class DisallowInherit extends BaseHandler {
 	public static final String KEYWORD = "廃嫡";
 
+	DisallowInherit() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.disallowInherit(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.DISALLOW_INHERIT, date, value);
 	}
 }
 // ALLOW_INHERIT   ("嗣子"),
-class AllowInherit implements LifeEvent.Handler {
+class AllowInherit extends BaseHandler {
 	public static final String KEYWORD = "嗣子";
 
+	AllowInherit() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.allowInherit(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.ALLOW_INHERIT, date, value);
 	}
 }
 // INHERIT         ("相続");
-class Inherit implements LifeEvent.Handler {
+class Inherit extends BaseHandler {
 	public static final String KEYWORD = "相続";
 
+	Inherit() {
+		//
+	}
+	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
-		if (string.contains("抹消")) return null;
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.inherit(string, date);
+	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
+		return new LifeEvent(string, LifeEvent.Type.INHERIT, date, value);
 	}
 }
