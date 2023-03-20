@@ -139,6 +139,11 @@ public class LifeEvent implements Comparable<LifeEvent> {
 
 
 abstract class BaseHandler implements LifeEvent.Handler {
+	protected final LifeEvent.Type type;
+	BaseHandler(LifeEvent.Type type) {
+		this.type = type;
+	}
+	
 	protected List<Matcher> includes = new ArrayList<>();
 	protected void include(String... args) {
 		for(var e: args) {
@@ -153,10 +158,8 @@ abstract class BaseHandler implements LifeEvent.Handler {
 	}
 	
 	protected LifeEvent getInstance(String string, JapaneseDate date, String value) {
-		return new LifeEvent(string, getType(), date, value);
+		return new LifeEvent(string, type, date, value);
 	}
-	
-	abstract LifeEvent.Type getType();
 	
 	@Override
 	public LifeEvent toLiveEvent(String string) {
@@ -165,14 +168,14 @@ abstract class BaseHandler implements LifeEvent.Handler {
 		
 		for(var m: excludes) {
 			if (m.reset(string).find()) {
-				logger.debug("## {} REJECT {}", getType(), string);
+				logger.debug("## {} REJECT {}", type, string);
 				return null;
 			}
 		}
 
 		JapaneseDate date = JapaneseDate.getInstance(string);
 		if (date == null) {
-			logger.debug("## {} REJECT {}", getType(), string);
+			logger.debug("## {} REJECT {}", type, string);
 			return null;
 		}
 
@@ -194,7 +197,7 @@ abstract class BaseHandler implements LifeEvent.Handler {
 				}
 			}
 		}
-		logger.debug("## {} REJECT {}", getType(), string);
+		logger.debug("## {} REJECT {}", type, string);
 		return null;
 	}
 }
@@ -204,16 +207,13 @@ class Birth extends BaseHandler {
 	public static final String KEYWORD = "出生";
 	
 	Birth() {
+		super(LifeEvent.Type.BIRTH);
 //		exclude("出生届出");
 		include(
 			"^(.+?)ニ於テ出生",
 			"\"日(.+?)で出生\"");
 	}
 	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.BIRTH;
-	}
 	@Override
 	public LifeEvent getInstance(String string, JapaneseDate date, String value) {
 		return super.getInstance(string, null, value);
@@ -224,6 +224,7 @@ class Death extends BaseHandler {
 	public static final String KEYWORD = "死亡";
 
 	Death() {
+		super(LifeEvent.Type.DEATH);
 		exclude(
 			"日夫"
 		);
@@ -237,17 +238,13 @@ class Death extends BaseHandler {
 			"死亡$"
 		);
 	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.DEATH;
-	}
 }
 // MARRIAGE        ("結婚"),
 class Marriage extends BaseHandler {
 	public static final String KEYWORD = "入籍|婚姻";
 
 	Marriage() {
+		super(LifeEvent.Type.MARRIAGE);
 		exclude(
 			"携帯入籍",
 			"共ニ入籍",
@@ -261,23 +258,13 @@ class Marriage extends BaseHandler {
 			"日(.+)と婚姻届出",
 			"^(.+)と婚姻届出");
 	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.MARRIAGE;
-	}
 }
 // ADOPTION        ("養子"),
 class Adoption extends BaseHandler {
 	public static final String KEYWORD = "養子";
 
 	Adoption() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.ADOPTION;
+		super(LifeEvent.Type.ADOPTION);
 	}
 }
 // DIVORCE         ("離婚"),
@@ -285,12 +272,7 @@ class Divorce extends BaseHandler {
 	public static final String KEYWORD = "離婚";
 
 	Divorce() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.DIVORCE;
+		super(LifeEvent.Type.DIVORCE);
 	}
 }
 // BRANCH          ("分家"),
@@ -298,12 +280,7 @@ class Branch extends BaseHandler {
 	public static final String KEYWORD = "分家";
 	
 	Branch() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.BRANCH;
+		super(LifeEvent.Type.BRANCH);
 	}
 }
 // RETIREMENT      ("隠居"),
@@ -311,12 +288,7 @@ class Retirement extends BaseHandler {
 	public static final String KEYWORD = "隠居";
 
 	Retirement() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.RETIREMENT;
+		super(LifeEvent.Type.RETIREMENT);
 	}
 }
 // DISALLOW_INHERIT("廃嫡"),
@@ -324,12 +296,7 @@ class DisallowInherit extends BaseHandler {
 	public static final String KEYWORD = "廃嫡";
 
 	DisallowInherit() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.DISALLOW_INHERIT;
+		super(LifeEvent.Type.DISALLOW_INHERIT);
 	}
 }
 // ALLOW_INHERIT   ("嗣子"),
@@ -337,12 +304,7 @@ class AllowInherit extends BaseHandler {
 	public static final String KEYWORD = "嗣子";
 
 	AllowInherit() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.ALLOW_INHERIT;
+		super(LifeEvent.Type.ALLOW_INHERIT);
 	}
 }
 // INHERIT         ("相続");
@@ -350,11 +312,6 @@ class Inherit extends BaseHandler {
 	public static final String KEYWORD = "相続";
 
 	Inherit() {
-		//
-	}
-	
-	@Override
-	LifeEvent.Type getType() {
-		return LifeEvent.Type.INHERIT;
+		super(LifeEvent.Type.INHERIT);
 	}
 }
