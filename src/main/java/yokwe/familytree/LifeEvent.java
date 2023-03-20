@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import yokwe.util.JapaneseDate;
 import yokwe.util.UnexpectedException;
 
 public class LifeEvent implements Comparable<LifeEvent> {
