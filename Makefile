@@ -19,10 +19,3 @@ clear-log:
 
 run-main: clear-log
 	ant run-main
-	
-run-main2: clear-log
-	ant run-main2
-	
-run-main3: clear-log
-	ant run-main3
-	

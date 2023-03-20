@@ -27,25 +27,5 @@
 			<sysproperty key="logback.configurationFile" value="${logback.conf}" />
 		</java>
 	</target>
-	
-	<!-- Main2 -->
-	<target name="run-main2">
-		<java module="yokwe.familytree/yokwe.familytree.Main2" fork="true">
-			<modulepath refid="build.classpath" />
-			<modulepath refid="target.jar" />
-			<classpath  refid="libreoffice.lib" />
-			<sysproperty key="logback.configurationFile" value="${logback.conf}" />
-		</java>
-	</target>
-	
-	<!-- Main3 -->
-	<target name="run-main3">
-		<java module="yokwe.familytree/yokwe.familytree.Main3" fork="true">
-			<modulepath refid="build.classpath" />
-			<modulepath refid="target.jar" />
-			<classpath  refid="libreoffice.lib" />
-			<sysproperty key="logback.configurationFile" value="${logback.conf}" />
-		</java>
-	</target>
 
 </project>

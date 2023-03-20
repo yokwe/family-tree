@@ -57,13 +57,11 @@ class LifeEventSetMap {
 	}
 }
 
-public class Main3 {
+public class Main {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
 	private static String URL_FAMILY_REGISTER = StringUtil.toURLString("tmp/family-register.ods");
 	
-	
-
 	public static void main(String[] args) {
 		logger.info("START");
 		
