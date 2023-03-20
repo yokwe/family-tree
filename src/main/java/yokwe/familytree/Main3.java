@@ -2,6 +2,7 @@ package yokwe.familytree;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +61,8 @@ public class Main3 {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
 	private static String URL_FAMILY_REGISTER = StringUtil.toURLString("tmp/family-register.ods");
+	
+	
 
 	public static void main(String[] args) {
 		logger.info("START");
@@ -115,11 +118,33 @@ public class Main3 {
 			}
 		}
 		
-		for(var entry: lifeEventSetMap.entrySet()) {
-			var personID = entry.getKey();
-			var eventSet = entry.getValue();
-			for(var e: eventSet) {
-				logger.info("## event  {}  {}", personID, e);
+		{
+			record Entry (String personID, LifeEvent event) {};
+			List<Entry> list = new ArrayList<>();
+			for(var e: lifeEventSetMap.entrySet()) {
+				String         personID = e.getKey();
+				Set<LifeEvent> set      = e.getValue();
+				for(var ee: set) {
+					Entry entry = new Entry(personID, ee);
+					list.add(entry);
+				}
+			}
+			Collections.sort(list, (a, b) -> {
+				int ret = 0;
+				if (ret == 0) ret = a.event.type.compareTo(b.event.type);
+				if (ret == 0) ret = a.personID.compareTo(b.personID);
+				if (ret == 0) ret = a.event.date.compareTo(b.event.date);
+				return ret;
+			});
+			for(var e: list) {
+				String type = e.event.type.toString();
+				String date = e.event.date.toString();
+				
+				logger.info("## event  {}", String.format("%s  %s  %s  %s",
+					type,
+					StringUtil.padRightSpace(e.personID, 14),
+					StringUtil.padRightSpace(date, 16),
+					e.event.string));
 			}
 		}
 		
