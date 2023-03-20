@@ -35,8 +35,14 @@ public class LifeEvent implements Comparable<LifeEvent> {
 	public static LifeEvent birth(String string, JapaneseDate date) {
 		return new LifeEvent(string, Type.BIRTH, date);
 	}
+	public static LifeEvent birth(String string, String place) {
+		return new LifeEvent(string, Type.BIRTH, null, place);
+	}
 	public static LifeEvent death(String string, JapaneseDate date) {
 		return new LifeEvent(string, Type.DEATH, date);
+	}
+	public static LifeEvent death(String string, JapaneseDate date, String place) {
+		return new LifeEvent(string, Type.DEATH, date, place);
 	}
 	public static LifeEvent marriage(String string, JapaneseDate date) {
 		return new LifeEvent(string, Type.MARRIAGE, date);
@@ -139,16 +145,18 @@ public class LifeEvent implements Comparable<LifeEvent> {
 		private List<Pair> list = new ArrayList<>();
 		
 		public Converter() {
-			addHandler(Death.KEYWORD,           new Death());
 			addHandler(Birth.KEYWORD,           new Birth());
+			// FIXME FROM HERE
 			addHandler(Marriage.KEYWORD,        new Marriage());
 			addHandler(Adoption.KEYWORD,        new Adoption());
 			addHandler(Divorce.KEYWORD,         new Divorce());
 			addHandler(Branch.KEYWORD,          new Branch());
-			addHandler(Retirement.KEYWORD,      new Retirement());
+			// FIXME UNTIL HERE
 			addHandler(DisallowInherit.KEYWORD, new DisallowInherit());
 			addHandler(AllowInherit.KEYWORD,    new AllowInherit());
 			addHandler(Inherit.KEYWORD,         new Inherit());
+			addHandler(Retirement.KEYWORD,      new Retirement());
+			addHandler(Death.KEYWORD,           new Death());
 		}
 		private void addHandler(String keyword, Handler handler) {
 			list.add(new Pair(keyword, handler));
@@ -168,23 +176,74 @@ public class LifeEvent implements Comparable<LifeEvent> {
 // DEATH           ("出生"),
 class Birth implements LifeEvent.Handler {
 	public static final String KEYWORD = "出生";
-
+	
+	private static Matcher M_A = Pattern.compile("^(.+?)ニ於テ出生").matcher("");
+	private static Matcher M_B = Pattern.compile("日(.+?)で出生").matcher("");
+	
 	@Override
 	public LifeEvent toLiveEvent(String string) {
-		JapaneseDate date = JapaneseDate.getInstance(string);
-		if (date == null) return null;
-		return LifeEvent.birth(string, date);
+		M_A.reset(string);
+		if (M_A.find()) {
+			String place = M_A.group(1);
+			return LifeEvent.birth(string, place);
+		}
+		M_B.reset(string);
+		if (M_B.find()) {
+			String place = M_B.group(1);
+			return LifeEvent.birth(string, place);
+		}
+		if (string.contains("出生届出")) return null;
+		// return LifeEvent.birth("## " + string, date);
+		return null;
 	}
 }
 // BIRTH           ("死亡"),
 class Death implements LifeEvent.Handler {
 	public static final String KEYWORD = "死亡";
 
+	private static Matcher M_A = Pattern.compile("日夫.*死亡$").matcher("");
+	private static Matcher M_B = Pattern.compile("日死亡$").matcher("");
+	private static Matcher M_C = Pattern.compile("分(.+?)ニ於テ死亡").matcher("");
+	private static Matcher M_D = Pattern.compile("時(.+?)ニ於テ死亡").matcher("");
+	private static Matcher M_E = Pattern.compile("日(.+?)ニ於テ死亡").matcher("");
+	private static Matcher M_F = Pattern.compile("分(.+?)で死亡").matcher("");
+	private static Matcher M_G = Pattern.compile("時(.+?)で死亡").matcher("");
+	private static Matcher M_H = Pattern.compile("日(.+?)で死亡").matcher("");
+	
 	@Override
 	public LifeEvent toLiveEvent(String string) {
 		JapaneseDate date = JapaneseDate.getInstance(string);
 		if (date == null) return null;
-		return LifeEvent.death(string, date);
+		if (M_A.reset(string).find()) return null;
+		if (M_B.reset(string).find()) {
+			return LifeEvent.death(string, date);
+		}
+		if (M_C.reset(string).find()) {
+			String place = M_C.group(1);
+			return LifeEvent.death(string, date, place);
+		}
+		if (M_D.reset(string).find()) {
+			String place = M_D.group(1);
+			return LifeEvent.death(string, date, place);
+		}
+		if (M_E.reset(string).find()) {
+			String place = M_E.group(1);
+			return LifeEvent.death(string, date, place);
+		}
+		if (M_F.reset(string).find()) {
+			String place = M_F.group(1);
+			return LifeEvent.death(string, date, place);
+		}
+		if (M_G.reset(string).find()) {
+			String place = M_G.group(1);
+			return LifeEvent.death(string, date, place);
+		}
+		if (M_H.reset(string).find()) {
+			String place = M_H.group(1);
+			return LifeEvent.death(string, date, place);
+		}
+		// return LifeEvent.birth("## " + string, date);
+		return null;
 	}
 }
 // MARRIAGE        ("結婚"),
