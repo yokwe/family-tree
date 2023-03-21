@@ -6,3 +6,4 @@
 **/maven-build.xml
 **/maven-build.properties
 **/._*
+**/.DS_Store
