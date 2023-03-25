@@ -112,7 +112,7 @@ public class Main {
 					// convert string to LifeEvent
 					LifeEvent event = converter.toLifeEvent(string);
 					if (event != null) {
-						// change 本籍 with domicile
+						// Replace 本籍 with domicile
 						if (event.value != null && event.value.equals("本籍")) {
 							LifeEvent newEvent = new LifeEvent(event, domicile);
 							event = newEvent;
