@@ -53,6 +53,10 @@ public class LifeEvent implements Comparable<LifeEvent> {
 		this(string, type, null, value);
 	}
 	
+	public LifeEvent(LifeEvent that, String value) {
+		this(that.string, that.type, that.date, value);
+	}
+	
 	private static boolean verboseString = false;
 	public static void setVerboseString(boolean newValue) {
 		verboseString = newValue;
@@ -111,13 +115,12 @@ public class LifeEvent implements Comparable<LifeEvent> {
 		private List<Pair> list = new ArrayList<>();
 		
 		public Converter() {
+			// order of addHandler is very important
 			addHandler(Birth.KEYWORD,           new Birth());
-			// FIXME FROM HERE
-			addHandler(Adoption.KEYWORD,        new Adoption());
 			addHandler(Divorce.KEYWORD,         new Divorce());
+			addHandler(Adoption.KEYWORD,        new Adoption());
 			addHandler(Marriage.KEYWORD,        new Marriage());
 			addHandler(Branch.KEYWORD,          new Branch());
-			// FIXME UNTIL HERE
 			addHandler(DisallowInherit.KEYWORD, new DisallowInherit());
 			addHandler(AllowInherit.KEYWORD,    new AllowInherit());
 			addHandler(Inherit.KEYWORD,         new Inherit());
@@ -163,10 +166,11 @@ abstract class BaseHandler implements LifeEvent.Handler {
 	}
 	
 	@Override
-	public LifeEvent toLiveEvent(String string) {
+	public LifeEvent toLiveEvent(String detail) {
 		// use concrete class name for logger
 		final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(this.getClass());
 		
+		String string = detail.replace("？", "");
 		for(var m: excludes) {
 			if (m.reset(string).find()) {
 				logger.debug("## {} REJECT {}", type, string);
@@ -209,10 +213,10 @@ class Birth extends BaseHandler {
 	
 	Birth() {
 		super(LifeEvent.Type.BIRTH);
-//		exclude("出生届出");
 		include(
+			"^(.+?)戸主.+?ニ於テ",
 			"^(.+?)ニ於テ出生",
-			"\"日(.+?)で出生\"");
+			"日(.+?)で?出生");
 	}
 	
 	@Override
@@ -236,7 +240,8 @@ class Death extends BaseHandler {
 			"分(.+?)で死亡",
 			"時(.+?)で死亡",
 			"日(.+?)で死亡",
-			"死亡$"
+			"死亡$",
+			".+?日.+?死亡.+?受付$"
 		);
 	}
 }
@@ -249,12 +254,14 @@ class Marriage extends BaseHandler {
 		exclude(
 			"携帯入籍",
 			"共ニ入籍",
-			"死亡");
+			"死亡",
+			"長男好弥");
 		include(
-			"日(.+?)ト婚姻",
-			"番[地戸](.+?)ト婚姻",
-			"日(.+)入籍ス",
+			"日(.{1,7})ト婚姻",
+			"番[地戸](.{1,7})ト婚姻",
+			"入籍ス$",
 			"^(.+)ト婚姻届出.+受付$",
+			"ト婚姻届出",
 			"^(.+)と婚姻夫の氏を称する旨",
 			"日(.+)と婚姻届出",
 			"^(.+)と婚姻届出");
@@ -262,10 +269,11 @@ class Marriage extends BaseHandler {
 }
 // ADOPTION        ("養子"),
 class Adoption extends BaseHandler {
-	public static final String KEYWORD = "養子";
+	public static final String KEYWORD = "養子|養嗣子|貰受ル";
 
 	Adoption() {
 		super(LifeEvent.Type.ADOPTION);
+		exclude("を養子とする縁組届出");
 	}
 }
 // DIVORCE         ("離婚"),
@@ -274,6 +282,7 @@ class Divorce extends BaseHandler {
 
 	Divorce() {
 		super(LifeEvent.Type.DIVORCE);
+		exclude("父母離婚");
 	}
 }
 // BRANCH          ("分家"),
@@ -282,6 +291,14 @@ class Branch extends BaseHandler {
 	
 	Branch() {
 		super(LifeEvent.Type.BRANCH);
+		exclude(
+			"共ニ除籍",
+			"ニ従ヒ分家ス",
+			"長谷川好弥父分家");
+		include(
+			"^(.+?)[ニに]?分家届出",
+			"ニ分家届",
+			"分家ス$");
 	}
 }
 // RETIREMENT      ("隠居"),
@@ -314,5 +331,6 @@ class Inherit extends BaseHandler {
 
 	Inherit() {
 		super(LifeEvent.Type.INHERIT);
+		exclude("抹消");
 	}
 }
