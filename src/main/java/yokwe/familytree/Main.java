@@ -111,7 +111,14 @@ public class Main {
 				for(var string: member.find("記載事項")) {
 					// convert string to LifeEvent
 					LifeEvent event = converter.toLifeEvent(string);
-					if (event != null) lifeEventSetMap.add(personID, event);
+					if (event != null) {
+						// change 本籍 with domicile
+						if (event.value != null && event.value.equals("本籍")) {
+							LifeEvent newEvent = new LifeEvent(event, domicile);
+							event = newEvent;
+						}
+						lifeEventSetMap.add(personID, event);
+					}
 				}
 			}
 		}
