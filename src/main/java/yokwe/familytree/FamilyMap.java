@@ -9,12 +9,8 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import yokwe.familytree.FamilyRegister.Record;
-import yokwe.util.StringUtil;
-import yokwe.util.UnexpectedException;
 
 public class FamilyMap {
-	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
-
 	public static record Pair(String key, String value) {}
 	
 	public static class PairList implements Iterable<Pair> {
@@ -70,16 +66,16 @@ public class FamilyMap {
 			this.id = id;
 		}
 		
-		public String find(String key) {
+		public String findFIrst(String key) {
 			return head.findFirst(key);
 		}
-		public String find(String key, String defaultValue) {
+		public String findFirst(String key, String defaultValue) {
 			String result = head.findFirst(key);
 			return (result == null) ? defaultValue : result;
 		}
 		
 		public String getFormat() {
-			return find("形式");
+			return findFIrst(FamilyRegister.FORMAT);
 		}
 	}
 	
