@@ -15,35 +15,8 @@ import yokwe.util.UnexpectedException;
 public class FamilyMap {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
-	public static class Pair implements Comparable<Pair> {
-		public final String key;
-		public final String value;
-		
-		public Pair(String key, String value) {
-			this.key   = key;
-			this.value = value;
-		}
-		@Override
-		public String toString() {
-			return StringUtil.toString(this);
-		}
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof Pair) {
-				Pair that = (Pair)o;
-				return this.compareTo(that) == 0;
-			} else {
-				return false;
-			}
-		}
-		@Override
-		public int compareTo(Pair that) {
-			int ret = this.key.compareTo(that.key);
-			if (ret == 0) ret = this.value.compareTo(that.value);
-			return ret;
-		}
-	}
-
+	public static record Pair(String key, String value) {}
+	
 	public static class PairList implements Iterable<Pair> {
 		private final List<Pair> list = new ArrayList<>();
 		
