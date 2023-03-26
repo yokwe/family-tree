@@ -33,7 +33,7 @@ public class FamilyRegister {
 		public String previousHeadOfFamily;
 		@ColumnName("戸主")
 		public String headOfFamily;
-		@ColumnName("本籍地")
+		@ColumnName("本籍")
 		public String domicile;
 	}
 	
@@ -84,6 +84,20 @@ public class FamilyRegister {
 	@Sheet.HeaderRow(0)
 	@Sheet.DataRow(1)
 	public static class Record extends Sheet {
+		// list of type for sheet
+		//   前戸主, 形式, 本籍, 氏名, 番号, 説明
+		// list of type for member
+		//   出生, 前戸主トノ続柄, 名前, 家族トノ続柄, 戸主ト成リタル原因及ヒ年月日, 母, 父, 父母トノ続柄, 続柄, 記載事項, 養母, 養父, 養父母トノ続柄
+		// list of value for 続柄　※戸主との続柄
+		//   三女, 三男, 二女, 二男, 五女, 五男, 四女, 四男, 夫, 妹, 妻, 姉, 姪, 婦, 孫, 弟, 弟妻, 戸主, 母, 父, 甥, 長女, 長男, 養子, 養母, 養父, 養父の養女
+		// list of value for 前戸主トノ続柄
+		//   -, 二男, 加藤角蔵長男, 神谷安左エ門養嗣子, 神谷齢蔵長男, 長男, 長谷川鎌吉三男
+		// list of value for 家族トノ続柄
+		//   -, 三男上一妻, 三男嘉太郎妻, 二男嘉市妻, 二男嘉市長女, 二男嘉市長男, 二男清一妻, 二男隆一妻, 五男藤内妻, 四男四郎妻, 弟助治郎二男, 弟助治郎妻, 弟助治郎長男, 弟嘉太郎妻, 弟清一妻, 弟藤内妻, 父嘉兵衛二男, 父嘉兵衛妻, 父龍蔵妻, 父龍蔵長男, 長男坂市妻, 長男好弥妻, 長男孝次妻, 長男藤内妻, 養父安左エ門妻, 養父安左衛門養女
+		// list of value for 父母トノ続柄
+		//   三女, 三男, 二女, 二男, 五女, 五男, 四女, 四男, 長女, 長男, ？女, ？男
+		// list of value for 養父母トノ続柄
+		//   養子
 		@ColumnName("戸籍")
 		public String registerID;
 		@ColumnName("人物")
@@ -93,6 +107,24 @@ public class FamilyRegister {
 		@ColumnName("内容")
 		public String detail;
 	}
+	
+	// constant for sheet
+	public static final String HEAD         = "戸主";
+	public static final String EX_HEAD      = "前戸主";
+	public static final String FORMAT       = "形式";
+	public static final String DOMICILE     = "本籍";
+	public static final String FULL_NAME    = "氏名";
+	public static final String DESCRIPTION  = "説明";
+	
+	// constants for member
+	public static final String BIRTH              = "出生";
+	public static final String NAME               = "名前";
+	public static final String MOTHER             = "母";
+	public static final String FATHER             = "父";
+	public static final String RELATION           = "続柄";
+	public static final String RELATION_TO_PARENT = "父母トノ続柄";
+	public static final String DESCRIBED_ITEM     = "記載事項";
+	
 	
 	public static void readSheet(String url, List<Register> registerList, List<Person> personList, List<Record> familyList) {
 		SpreadSheet spreadSheet = new SpreadSheet(url, true);
