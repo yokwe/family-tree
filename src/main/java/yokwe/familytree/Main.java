@@ -81,14 +81,14 @@ public class Main {
 		logger.info("map {}", familyMap.size());
 		
 		LifeEventSetMap lifeEventSetMap = new LifeEventSetMap();
-		
-		for(var entry: familyMap.entrySet()) {
-			var registerID = entry.getKey();
-			var family     = entry.getValue();
+				
+		for(var familyEntry: familyMap.entrySet()) {
+			var registerID = familyEntry.getKey();
+			var family     = familyEntry.getValue();
 			var register   = registerMap.get(registerID);
 			
-			var domicile = family.find("本籍地");
-			var format   = family.find("形式");
+			var domicile = family.findFIrst(FamilyRegister.DOMICILE);
+			var format   = family.findFIrst(FamilyRegister.FORMAT);
 			
 			logger.info("## {}", registerID);
 			if (!register.domicile.equals(domicile)) {
@@ -102,18 +102,18 @@ public class Main {
 				throw new UnexpectedException("Unexpected");
 			}
 
-			for(var entry2: family.entrySet()) {
-				var personID = entry2.getKey();
-				var member   = entry2.getValue();
+			for(var personEntry: family.entrySet()) {
+				var personID = personEntry.getKey();
+				var member   = personEntry.getValue();
 				var person   = personMap.get(personID);
 				
 				logger.info("## {}", personID);
-				for(var string: member.find("記載事項")) {
+				for(var string: member.find(FamilyRegister.DESCRIBED_ITEM)) {
 					// convert string to LifeEvent
 					LifeEvent event = converter.toLifeEvent(string);
 					if (event != null) {
 						// Replace 本籍 with domicile
-						if (event.value != null && event.value.equals("本籍")) {
+						if (event.value != null && event.value.equals(FamilyRegister.DOMICILE)) {
 							LifeEvent newEvent = new LifeEvent(event, domicile);
 							event = newEvent;
 						}
