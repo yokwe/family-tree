@@ -123,7 +123,11 @@ public class FamilyRegister {
 	public static final String FATHER             = "父";
 	public static final String RELATION           = "続柄";
 	public static final String RELATION_TO_PARENT = "父母トノ続柄";
+	public static final String RELATION_TO_FAMILY = "家族トノ続柄";
 	public static final String DESCRIBED_ITEM     = "記載事項";
+	
+	// constant for relation
+	public static final String WIFE               = "妻";
 	
 	
 	public static void readSheet(String url, List<Register> registerList, List<Person> personList, List<Record> familyList) {
