@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import yokwe.familytree.FamilyRegister.Person;
 import yokwe.familytree.FamilyRegister.Record;
 import yokwe.familytree.FamilyRegister.Register;
+import yokwe.util.CSVUtil;
+import yokwe.util.JapaneseDate;
 import yokwe.util.StringUtil;
 import yokwe.util.UnexpectedException;
 
@@ -57,10 +59,66 @@ class LifeEventSetMap {
 	}
 }
 
+
+class MyPerson {
+	static Map<String, MyPerson> map = new TreeMap<>();
+	//         id
+	
+	static MyPerson getInstance(String id) {
+		if (map.containsKey(id)) {
+			return map.get(id);
+		} else {
+			MyPerson myPerson = new MyPerson(id);
+			map.put(id, myPerson);
+			return myPerson;
+		}
+	}
+	
+	String          id;
+	String          familyName;
+	String          givenName;
+	String          gender; // M or F
+	String          relation; // relation to parent
+	String          father;
+	String          mother;
+	String          spouse;
+	JapaneseDate    birth;
+	JapaneseDate    marriage;
+	JapaneseDate    death;
+	String          yearBirth;
+	String          yearMarriage;
+	String          yearDeath;
+	
+//	List<LifeEvent> list;
+	
+	MyPerson(String id_) {
+		id = id_;
+		familyName   = "";
+		givenName    = "";
+		gender       = "";
+		relation     = "";
+		father       = "";
+		mother       = "";
+		spouse       = "";
+		birth        = JapaneseDate.UNDEFIEND;
+		marriage     = JapaneseDate.UNDEFIEND;
+		death        = JapaneseDate.UNDEFIEND;
+		yearBirth    = "";
+		yearMarriage = "";
+		yearDeath    = "";
+//		list         = new ArrayList<>();
+	}
+	
+	@Override
+	public String toString() {
+		return StringUtil.toString(this);
+	}
+}
+
 public class Main {
 	private static final org.slf4j.Logger logger = yokwe.util.LoggerUtil.getLogger();
 
-	private static String URL_FAMILY_REGISTER = StringUtil.toURLString("tmp/family-register.ods");
+	private static String URL_FAMILY_REGISTER = StringUtil.toURLString("tmp/family-register.ods");	
 	
 	public static void main(String[] args) {
 		logger.info("START");
@@ -108,6 +166,57 @@ public class Main {
 				var person   = personMap.get(personID);
 				
 				logger.info("## {}", personID);
+				
+				MyPerson myPerson = MyPerson.getInstance(personID);
+				{
+					myPerson.givenName = member.findFirst(FamilyRegister.NAME);
+					myPerson.father    = member.findFirst(FamilyRegister.FATHER, "");
+					myPerson.mother    = member.findFirst(FamilyRegister.MOTHER, "");
+					myPerson.birth     = JapaneseDate.getInstance(member.findFirst(FamilyRegister.BIRTH,  ""));
+					myPerson.yearBirth = String.valueOf(myPerson.birth.year);
+					
+					if (myPerson.father.startsWith("亡")) myPerson.father = myPerson.father.substring(1);
+					if (myPerson.mother.startsWith("亡")) myPerson.mother = myPerson.mother.substring(1);
+
+					{
+						var relation = member.findFirst(FamilyRegister.RELATION_TO_PARENT);
+						if (relation != null && !relation.equals("-")) {
+							if (myPerson.relation.isEmpty()) myPerson.relation = relation;
+							if (myPerson.gender.isEmpty() && relation.endsWith("男")) myPerson.gender = "男";
+							if (myPerson.gender.isEmpty() && relation.endsWith("女")) myPerson.gender = "女";
+						}
+					}
+					{
+						var relation = member.findFirst(FamilyRegister.RELATION);
+						if (relation != null && !relation.equals("-")) {
+							if (relation.endsWith("男") || relation.endsWith("女")) {
+								if (myPerson.relation.isEmpty()) myPerson.relation = relation.substring(relation.length() - 2);
+								if (myPerson.gender.isEmpty())   myPerson.gender   = relation.substring(relation.length() - 1);
+
+								if (relation.length() == 2) {
+									var father = family.findMemberByRelation(FamilyRegister.HEAD);
+									if (father != null && myPerson.father.isEmpty()) {
+										myPerson.father = father.findFirst(FamilyRegister.NAME, "").replace("亡", "");
+									}
+									var mother = family.findMemberByRelation(FamilyRegister.WIFE);
+									if (mother != null && myPerson.mother.isEmpty()) {
+										myPerson.mother = mother.findFirst(FamilyRegister.NAME, "").replace("亡", "");
+									}
+								}
+							}
+						}
+					}
+					{
+						var relation = member.findFirst(FamilyRegister.RELATION_TO_FAMILY);
+						if (relation != null && !relation.equals("-")) {
+							if (relation.endsWith("男") || relation.endsWith("女")) {
+								if (myPerson.relation.isEmpty()) myPerson.relation = relation.substring(relation.length() - 2);
+								if (myPerson.gender.isEmpty())   myPerson.gender   = relation.substring(relation.length() - 1);
+							}
+						}
+					}
+				}
+				
 				for(var string: member.find(FamilyRegister.DESCRIBED_ITEM)) {
 					// convert string to LifeEvent
 					LifeEvent event = converter.toLifeEvent(string);
@@ -118,6 +227,17 @@ public class Main {
 							event = newEvent;
 						}
 						lifeEventSetMap.add(personID, event);
+						
+						if (event.type == LifeEvent.Type.DEATH) {
+							myPerson.death     = event.date;
+							myPerson.yearDeath = String.valueOf(myPerson.death.year);
+						}
+						if (event.type == LifeEvent.Type.MARRIAGE) {
+							myPerson.marriage     = event.date;
+							myPerson.yearMarriage = String.valueOf(myPerson.marriage.year);
+
+							if (event.value != null) myPerson.spouse = event.value;
+						}
 					}
 				}
 			}
@@ -154,6 +274,13 @@ public class Main {
 					StringUtil.padRightSpace(date, 16),
 					StringUtil.padRightSpace(value, 30),
 					e.event.string));
+			}
+		}
+		
+		{
+			CSVUtil.write(MyPerson.class).file("tmp/MyPerson.csv", MyPerson.map.values());
+			for(var e: MyPerson.map.values()) {
+				logger.info("MyPerson {}", e.toString());
 			}
 		}
 		
