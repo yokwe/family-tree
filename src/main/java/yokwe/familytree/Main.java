@@ -200,11 +200,19 @@ public class Main {
 							if (myPerson.relation.isEmpty()) myPerson.relation = relation;
 						}
 					}
+					if (myPerson.relation.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION_TO_FAMILY);
+						if (relation != null && !relation.equals("-") && (relation.endsWith("男") || relation.endsWith("女"))) {
+							if (myPerson.relation.isEmpty()) myPerson.relation = relation.substring(relation.length() - 2);
+						}
+					}
 					if (myPerson.gender.isEmpty()) {
 						var relation = member.findFirst(FamilyRegister.RELATION);
 						if (relation != null && !relation.equals("-")) {
 							if (relation.endsWith("男")) myPerson.gender = "男";
 							if (relation.endsWith("女")) myPerson.gender = "女";
+							if (relation.equals("妻"))   myPerson.gender = "女";
+							if (relation.equals("母"))   myPerson.gender = "女";
 						}
 					}
 					if (myPerson.gender.isEmpty()) {
@@ -212,6 +220,8 @@ public class Main {
 						if (relation != null && !relation.equals("-")) {
 							if (relation.endsWith("男")) myPerson.gender = "男";
 							if (relation.endsWith("女")) myPerson.gender = "女";
+							if (relation.equals("妻"))   myPerson.gender = "女";
+							if (relation.equals("母"))   myPerson.gender = "女";
 						}
 					}
 					if (myPerson.gender.isEmpty()) {
@@ -219,6 +229,8 @@ public class Main {
 						if (relation != null && !relation.equals("-")) {
 							if (relation.endsWith("男")) myPerson.gender = "男";
 							if (relation.endsWith("女")) myPerson.gender = "女";
+							if (relation.equals("妻"))   myPerson.gender = "女";
+							if (relation.equals("母"))   myPerson.gender = "女";
 						}
 					}
 					if (myPerson.father.isEmpty()) {
@@ -246,7 +258,7 @@ public class Main {
 							var mother = family.findMemberByRelation(FamilyRegister.WIFE);
 							if (mother != null) {
 								var name = mother.findFirst(FamilyRegister.NAME);
-								if (name != null) myPerson.mother = name.replace("亡", "");
+								if (name != null && !name.equals("-")) myPerson.mother = name.replace("亡", "");
 							}
 						}
 					}
@@ -256,8 +268,14 @@ public class Main {
 							var mother = family.findMemberByRelation(FamilyRegister.MOTHER);
 							if (mother != null) {
 								var name = mother.findFirst(FamilyRegister.NAME);
-								if (name != null) myPerson.mother = name.replace("亡", "");
+								if (name != null && !name.equals("-")) myPerson.mother = name.replace("亡", "");
 							}
+						}
+					}
+					if (myPerson.spouse.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION_TO_FAMILY);
+						if (relation != null && relation.startsWith("父") && relation.endsWith("妻")) {
+							myPerson.spouse = relation.substring(1, relation.length() - 1);
 						}
 					}
 				}
