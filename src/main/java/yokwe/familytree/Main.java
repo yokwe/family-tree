@@ -169,49 +169,94 @@ public class Main {
 				
 				MyPerson myPerson = MyPerson.getInstance(personID);
 				{
-					myPerson.givenName = member.findFirst(FamilyRegister.NAME);
-					myPerson.father    = member.findFirst(FamilyRegister.FATHER, "");
-					myPerson.mother    = member.findFirst(FamilyRegister.MOTHER, "");
-					myPerson.birth     = JapaneseDate.getInstance(member.findFirst(FamilyRegister.BIRTH,  ""));
-					myPerson.yearBirth = String.valueOf(myPerson.birth.year);
-					
-					if (myPerson.father.startsWith("亡")) myPerson.father = myPerson.father.substring(1);
-					if (myPerson.mother.startsWith("亡")) myPerson.mother = myPerson.mother.substring(1);
-
-					{
+					if (myPerson.givenName.isEmpty()) {
+						var value = member.findFirst(FamilyRegister.NAME);
+						if (value != null && !value.isEmpty()) myPerson.givenName = value;
+					}
+					if (myPerson.father.isEmpty()) {
+						var value = member.findFirst(FamilyRegister.FATHER, "").replace("亡", "");
+						if (value != null && !value.isEmpty()) myPerson.father = value;
+					}
+					if (myPerson.mother.isEmpty()) {
+						var value = member.findFirst(FamilyRegister.MOTHER, "").replace("亡", "");
+						if (value != null && !value.isEmpty()) myPerson.mother = value;
+					}
+					if (!myPerson.birth.isDefined()) {
+						var value = member.findFirst(FamilyRegister.BIRTH, "");
+						if (value != null && !value.isEmpty()) {
+							myPerson.birth = JapaneseDate.getInstance(value);
+							myPerson.yearBirth = String.valueOf(myPerson.birth.year);
+						}
+					}
+					if (myPerson.relation.isEmpty()) {
 						var relation = member.findFirst(FamilyRegister.RELATION_TO_PARENT);
 						if (relation != null && !relation.equals("-")) {
 							if (myPerson.relation.isEmpty()) myPerson.relation = relation;
-							if (myPerson.gender.isEmpty() && relation.endsWith("男")) myPerson.gender = "男";
-							if (myPerson.gender.isEmpty() && relation.endsWith("女")) myPerson.gender = "女";
 						}
 					}
-					{
+					if (myPerson.relation.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION);
+						if (relation != null && !relation.equals("-") && relation.length() == 2 && (relation.endsWith("男") || relation.endsWith("女"))) {
+							if (myPerson.relation.isEmpty()) myPerson.relation = relation;
+						}
+					}
+					if (myPerson.gender.isEmpty()) {
 						var relation = member.findFirst(FamilyRegister.RELATION);
 						if (relation != null && !relation.equals("-")) {
-							if (relation.endsWith("男") || relation.endsWith("女")) {
-								if (myPerson.relation.isEmpty()) myPerson.relation = relation.substring(relation.length() - 2);
-								if (myPerson.gender.isEmpty())   myPerson.gender   = relation.substring(relation.length() - 1);
-
-								if (relation.length() == 2) {
-									var father = family.findMemberByRelation(FamilyRegister.HEAD);
-									if (father != null && myPerson.father.isEmpty()) {
-										myPerson.father = father.findFirst(FamilyRegister.NAME, "").replace("亡", "");
-									}
-									var mother = family.findMemberByRelation(FamilyRegister.WIFE);
-									if (mother != null && myPerson.mother.isEmpty()) {
-										myPerson.mother = mother.findFirst(FamilyRegister.NAME, "").replace("亡", "");
-									}
-								}
+							if (relation.endsWith("男")) myPerson.gender = "男";
+							if (relation.endsWith("女")) myPerson.gender = "女";
+						}
+					}
+					if (myPerson.gender.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION_TO_FAMILY);
+						if (relation != null && !relation.equals("-")) {
+							if (relation.endsWith("男")) myPerson.gender = "男";
+							if (relation.endsWith("女")) myPerson.gender = "女";
+						}
+					}
+					if (myPerson.gender.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION_TO_PARENT);
+						if (relation != null && !relation.equals("-")) {
+							if (relation.endsWith("男")) myPerson.gender = "男";
+							if (relation.endsWith("女")) myPerson.gender = "女";
+						}
+					}
+					if (myPerson.father.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION);
+						if (relation != null && !relation.equals("-") && relation.length() == 2 && (relation.endsWith("男") || relation.endsWith("女"))) {
+							var father = family.findMemberByRelation(FamilyRegister.HEAD);
+							if (father != null) {
+								var name = father.findFirst(FamilyRegister.NAME);
+								if (name != null) myPerson.father = name.replace("亡", "");
 							}
 						}
 					}
-					{
-						var relation = member.findFirst(FamilyRegister.RELATION_TO_FAMILY);
-						if (relation != null && !relation.equals("-")) {
-							if (relation.endsWith("男") || relation.endsWith("女")) {
-								if (myPerson.relation.isEmpty()) myPerson.relation = relation.substring(relation.length() - 2);
-								if (myPerson.gender.isEmpty())   myPerson.gender   = relation.substring(relation.length() - 1);
+					if (myPerson.father.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION);
+						if (relation != null && relation.equals(FamilyRegister.HEAD)) {
+							var exHead = family.findFIrst(FamilyRegister.EX_HEAD);
+							if (exHead != null && exHead.startsWith("亡父")) {
+								myPerson.father = exHead.replace("亡父", "");
+							}
+						}
+					}
+					if (myPerson.mother.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION);
+						if (relation != null && !relation.equals("-") && relation.length() == 2 && (relation.endsWith("男") || relation.endsWith("女"))) {
+							var mother = family.findMemberByRelation(FamilyRegister.WIFE);
+							if (mother != null) {
+								var name = mother.findFirst(FamilyRegister.NAME);
+								if (name != null) myPerson.mother = name.replace("亡", "");
+							}
+						}
+					}
+					if (myPerson.mother.isEmpty()) {
+						var relation = member.findFirst(FamilyRegister.RELATION);
+						if (relation != null && relation.equals(FamilyRegister.HEAD)) {
+							var mother = family.findMemberByRelation(FamilyRegister.MOTHER);
+							if (mother != null) {
+								var name = mother.findFirst(FamilyRegister.NAME);
+								if (name != null) myPerson.mother = name.replace("亡", "");
 							}
 						}
 					}
@@ -280,6 +325,7 @@ public class Main {
 		{
 			CSVUtil.write(MyPerson.class).file("tmp/MyPerson.csv", MyPerson.map.values());
 			for(var e: MyPerson.map.values()) {
+//				if (!e.father.isEmpty()) continue;
 				logger.info("MyPerson {}", e.toString());
 			}
 		}
