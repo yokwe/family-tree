@@ -26,6 +26,10 @@ public class FamilyMap {
 			}
 			return null;
 		}
+		public String findFirst (String key, String defaultValue) {
+			String result = findFirst(key);
+			return result == null ? defaultValue : result;
+		}
 		
 		public List<String> find(String key) {
 			List<String> result = new ArrayList<>();
@@ -59,6 +63,16 @@ public class FamilyMap {
 		}
 		public Set<Map.Entry<String, PairList>> entrySet() {
 			return member.entrySet();
+		}
+		
+		public PairList findMemberByRelation(String relation) {
+			for(var e: member.values()) {
+				var value = e.findFirst(FamilyRegister.RELATION);
+				if (value != null && relation.equals(value)) {
+					return e;
+				}
+			}
+			return null;
 		}
 		
 		
